@@ -12,7 +12,7 @@ class MazeConfig(BaseModel):
         EXIT: Exit coordinates as (x, y).
         OUTPUT_FILE: Output filename (non-empty).
         PERFECT: Whether the maze must be perfect (single path).
-        seed: Optional random seed for reproducibility.
+        SEED: Optional random seed for reproducibility.
     """
 
     WIDTH: int = Field(gt=0)
@@ -21,7 +21,7 @@ class MazeConfig(BaseModel):
     EXIT: tuple[int, int]
     OUTPUT_FILE: str = Field(min_length=1)
     PERFECT: bool
-    seed: Optional[int] = None
+    SEED: Optional[int] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -57,11 +57,11 @@ class MazeConfig(BaseModel):
                     f"HEIGHT must be an int (got {
                         data['HEIGHT']})")
 
-        if "seed" in data and data["seed"] not in ("", None):
+        if "SEED" in data and data["SEED"] not in ("", None):
             try:
-                data["seed"] = int(data["seed"])
+                data["SEED"] = int(data["SEED"])
             except (ValueError, TypeError):
-                raise ValueError(f"seed must be an int (got {data['seed']})")
+                raise ValueError(f"SEED must be an int (got {data['SEED']})")
 
         if "ENTRY" in data:
             try:
