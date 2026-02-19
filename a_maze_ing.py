@@ -49,7 +49,7 @@ def print_config(cfg: MazeConfig) -> None:
     print(f"  EXIT: {cfg.EXIT}")
     print(f"  OUTPUT_FILE: {cfg.OUTPUT_FILE}")
     print(f"  PERFECT: {cfg.PERFECT}")
-    print(f"  seed: {cfg.seed}")
+    print(f"  SEED: {cfg.SEED}")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import time
 from typing import Any, Optional
 from pydantic import BaseModel, Field, model_validator
 
@@ -127,15 +128,25 @@ def read_config(filename: str) -> dict[str, str]:
 
 
 def verify_config(cfg: dict[str, str]) -> MazeConfig:
-    """Validate and convert the raw config dict into a MazeConfig instance.
+    """Validate the raw config dict and ensure a usable seed is set.
+
+    This function validates and converts the raw configuration values using
+    `MazeConfig.model_validate`. If the optional `SEED` field is missing or
+    empty, a new seed is generated from the current time so the maze generation
+    can still be reproducible (the chosen seed is stored back into the returned
+    `MazeConfig` object).
 
     Args:
         cfg: Raw config dictionary (values are usually strings).
 
     Returns:
-        A validated MazeConfig object.
+        A validated `MazeConfig` instance with `SEED` always set to an integer.
 
     Raises:
-        pydantic.ValidationError: If validation fails.
+        pydantic.ValidationError: If validation fails (missing fields, wrong
+            formats, invalid values, etc.).
     """
-    return MazeConfig.model_validate(cfg)
+    maze_config: MazeConfig = MazeConfig.model_validate(cfg)
+    if maze_config.SEED is None:
+        maze_config.SEED = time.time_ns() & 0xFFFFFFFF
+    return maze_config
