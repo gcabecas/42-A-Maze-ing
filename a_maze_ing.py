@@ -1,6 +1,8 @@
 import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
+from maze_gen import Maze
+from maze_output import write_output_file_from_maze
 
 
 def main() -> None:
@@ -32,6 +34,17 @@ def main() -> None:
 
     print_config(maze_data)
 
+    if maze_data.PERFECT:
+        maze = Maze(
+            maze_data.WIDTH,
+            maze_data.HEIGHT,
+            maze_data.SEED,
+            maze_data.ENTRY,
+            maze_data.EXIT)
+        maze.generate_with_42()
+        write_output_file_from_maze(maze, maze_data.OUTPUT_FILE)
+        print_maze(maze)
+
 
 def print_config(cfg: MazeConfig) -> None:
     """Print the validated configuration to stdout.
@@ -50,6 +63,39 @@ def print_config(cfg: MazeConfig) -> None:
     print(f"  OUTPUT_FILE: {cfg.OUTPUT_FILE}")
     print(f"  PERFECT: {cfg.PERFECT}")
     print(f"  SEED: {cfg.SEED}")
+
+
+def print_maze(maze: Maze) -> None:
+    w = maze.width
+    h = maze.height
+
+    line = "+"
+    for x in range(w):
+        c = maze.cell(x, 0)
+        line += "---+" if (c & 1) else "   +"
+    print(line)
+
+    for y in range(h):
+        line = ""
+        for x in range(w):
+            c = maze.cell(x, y)
+
+            if x == 0:
+                line += "|" if (c & 8) else " "
+
+            if c == 15:
+                line += "## "
+            else:
+                line += "   "
+
+            line += "|" if (c & 2) else " "
+        print(line)
+
+        line = "+"
+        for x in range(w):
+            c = maze.cell(x, y)
+            line += "---+" if (c & 4) else "   +"
+        print(line)
 
 
 if __name__ == "__main__":
