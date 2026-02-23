@@ -1,55 +1,38 @@
 import random
+from typing import Optional
+import sys
 
 
 class Maze:
-    """Grid maze generator with optional embedded "42" blocked pattern.
+    def __init__(self,
+                 width: int,
+                 height: int,
+                 seed: Optional[int],
+                 entry: tuple[int,
+                              int],
+                 exit: tuple[int,
+                             int],
+                 output_file: str) -> None:
 
-    The maze is stored as a flat list of integers (self.grid). Each cell
-    value encodes walls using bit-like weights (1, 2, 4, 8). Helper
-    methods carve or close walls between neighboring cells.
-
-    The generator can embed a visible "42" pattern as blocked cells, while
-    ensuring a path still exists from entry to exit.
-    """
-
-    def __init__(self, width: int, height: int, seed: int,
-                 entry: tuple[int, int], exit: tuple[int, int]) -> None:
-        """Initialize maze parameters and default grid/wall configuration.
-
-        Args:
-            width: Maze width in cells.
-            height: Maze height in cells.
-            seed: Seed used to drive deterministic random choices.
-            entry: (x, y) start cell coordinates.
-            exit: (x, y) goal cell coordinates.
-
-        Returns:
-            None.
-        """
         self.width = width
         self.height = height
         self.seed = seed
         self.entry = entry
         self.exit = exit
+        self.solver: str = ""
+        self.output_file = output_file
+
+        if seed is None:
+            self.rng = random.Random()
+            self.seed = self.rng.getrandbits(32)
 
         self.grid = [15] * (width * height)
-        # self.pattern = [
-        #    "1000111",
-        #    "1000001",
-        #    "1110111",
-        #    "0010100",
-        #    "0010111",
-        # ]
         self.pattern = [
-            "000111000",
-            "001111100",
-            "000111000",
-            "000111000",
-            "000111000",
-            "000111000",
-            "001111100",
-            "011111110",
-            "001101100"
+            "1000111",
+            "1000001",
+            "1110111",
+            "0010100",
+            "0010111",
         ]
         self.DIRS = (
             (0, -1, 1, 4),
@@ -59,110 +42,29 @@ class Maze:
         )
 
     def cell_index(self, x: int, y: int) -> int:
-        """Return the flat index in self.grid for cell coordinates (x, y).
-
-        Args:
-            x: X coordinate of the cell.
-            y: Y coordinate of the cell.
-
-        Returns:
-            The index into the 1D grid list.
-        """
         return y * self.width + x
 
     def in_bounds(self, x: int, y: int) -> bool:
-        """Check whether (x, y) is inside the maze boundaries.
-
-        Args:
-            x: X coordinate to test.
-            y: Y coordinate to test.
-
-        Returns:
-            True if coordinates are within the maze, else False.
-        """
         return 0 <= x < self.width and 0 <= y < self.height
 
     def cell(self, x: int, y: int) -> int:
-        """Return the encoded wall value for the cell at (x, y).
-
-        Args:
-            x: X coordinate of the cell.
-            y: Y coordinate of the cell.
-
-        Returns:
-            The integer encoding the cell's walls.
-        """
         return self.grid[self.cell_index(x, y)]
 
     def has_wall_value(self, value: int, wall: int) -> bool:
-        """Return True if a wall is present in an encoded cell value.
-
-        The encoding uses weights in {1, 2, 4, 8}. A wall is present when
-        the corresponding bit-like weight is set.
-
-        Args:
-            value: Encoded cell value to inspect.
-            wall: Wall weight to test (1, 2, 4, or 8).
-
-        Returns:
-            True if the wall is present, else False.
-        """
         return (value // wall) % 2 == 1
 
     def has_wall(self, x: int, y: int, wall: int) -> bool:
-        """Return True if cell (x, y) contains the specified wall.
-
-        Args:
-            x: X coordinate of the cell.
-            y: Y coordinate of the cell.
-            wall: Wall weight to test (1, 2, 4, or 8).
-
-        Returns:
-            True if the wall is present, else False.
-        """
         return self.has_wall_value(self.cell(x, y), wall)
 
     def remove_wall_at_index(self, i: int, wall: int) -> None:
-        """Remove a wall from the cell at flat index i, if present.
-
-        Args:
-            i: Index in the 1D grid list.
-            wall: Wall weight to remove (1, 2, 4, or 8).
-
-        Returns:
-            None.
-        """
         if (self.grid[i] // wall) % 2 == 1:
             self.grid[i] -= wall
 
     def add_wall_at_index(self, i: int, wall: int) -> None:
-        """Add a wall to the cell at flat index i, if missing.
-
-        Args:
-            i: Index in the 1D grid list.
-            wall: Wall weight to add (1, 2, 4, or 8).
-
-        Returns:
-            None.
-        """
         if (self.grid[i] // wall) % 2 == 0:
             self.grid[i] += wall
 
     def carve_between(self, x: int, y: int, nx: int, ny: int) -> None:
-        """Open the passage between (x, y) and its neighbor (nx, ny).
-
-        This removes the appropriate wall in the current cell and the
-        opposite wall in the neighbor cell, based on movement direction.
-
-        Args:
-            x: X coordinate of the current cell.
-            y: Y coordinate of the current cell.
-            nx: X coordinate of the neighbor cell.
-            ny: Y coordinate of the neighbor cell.
-
-        Returns:
-            None.
-        """
         dx = nx - x
         dy = ny - y
 
@@ -176,20 +78,6 @@ class Maze:
                 return
 
     def close_between(self, x: int, y: int, nx: int, ny: int) -> None:
-        """Close the passage between (x, y) and its neighbor (nx, ny).
-
-        This adds the appropriate wall in the current cell and the
-        opposite wall in the neighbor cell, based on movement direction.
-
-        Args:
-            x: X coordinate of the current cell.
-            y: Y coordinate of the current cell.
-            nx: X coordinate of the neighbor cell.
-            ny: Y coordinate of the neighbor cell.
-
-        Returns:
-            None.
-        """
         dx = nx - x
         dy = ny - y
 
@@ -203,19 +91,6 @@ class Maze:
                 return
 
     def make_blocked(self, ox: int, oy: int) -> list[bool]:
-        """Build a blocked-cells mask by placing the "42" pattern at origin.
-
-        Cells corresponding to '1' characters in self.pattern are marked
-        as blocked. The origin (ox, oy) is the top-left placement point.
-
-        Args:
-            ox: X coordinate of the pattern origin (top-left).
-            oy: Y coordinate of the pattern origin (top-left).
-
-        Returns:
-            A boolean list of length width * height, where True means the
-            cell is blocked by the pattern.
-        """
         blocked = [False] * (self.width * self.height)
 
         pattern_height = len(self.pattern)
@@ -231,17 +106,6 @@ class Maze:
         return blocked
 
     def apply_blocked_cells(self, blocked: list[bool]) -> None:
-        """Apply a blocked mask to the maze by closing walls around blocks.
-
-        Blocked cells are reset to full walls (value 15), and all edges
-        between a blocked cell and any in-bounds neighbor are closed.
-
-        Args:
-            blocked: Boolean mask where True marks blocked cells.
-
-        Returns:
-            None.
-        """
         for row in range(self.height):
             for col in range(self.width):
                 cell_i = self.cell_index(col, row)
@@ -257,17 +121,6 @@ class Maze:
                         self.close_between(col, row, neighbor_x, neighbor_y)
 
     def path_exists_avoiding(self, blocked: list[bool]) -> bool:
-        """Check if a path exists from entry to exit while avoiding blocks.
-
-        This performs a breadth-first search that only traverses open
-        passages and never enters a blocked cell.
-
-        Args:
-            blocked: Boolean mask where True marks blocked cells.
-
-        Returns:
-            True if a valid path exists, else False.
-        """
         start_x, start_y = self.entry
         goal_x, goal_y = self.exit
 
@@ -312,21 +165,6 @@ class Maze:
         return False
 
     def generate_perfect_avoiding(self, blocked: list[bool]) -> None:
-        """Generate a perfect maze while never carving into blocked cells.
-
-        A "perfect" maze is a spanning tree over reachable cells (no loops
-        and exactly one path between any two reachable cells). This uses a
-        randomized depth-first search with a stack.
-
-        Args:
-            blocked: Boolean mask where True marks blocked cells.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: If the entry cell is blocked by the pattern.
-        """
         rng = random.Random(self.seed)
 
         start_x, start_y = self.entry
@@ -366,21 +204,94 @@ class Maze:
             visited[self.cell_index(next_x, next_y)] = True
             stack.append((next_x, next_y))
 
-    def generate_with_42(self) -> None:
-        """Generate a maze embedding a visible "42" pattern when possible.
+    def solve_shortest(self, blocked: list[bool]) -> None:
+        start_x, start_y = self.entry
+        goal_x, goal_y = self.exit
 
-        The method tries candidate placements for the pattern (center
-        first, then random origins). For each placement, it generates a
-        perfect maze avoiding the blocked cells, applies the blocked
-        cells, and verifies that a path still exists from entry to exit.
+        if (start_x, start_y) == (goal_x, goal_y):
+            self.solver = ""
+            return
 
-        Returns:
-            None.
+        start_i = self.cell_index(start_x, start_y)
+        goal_i = self.cell_index(goal_x, goal_y)
 
-        Raises:
-            ValueError: If the maze is too small for the pattern.
-            ValueError: If no placement keeps a valid entry-to-exit path.
-        """
+        if blocked[start_i] or blocked[goal_i]:
+            raise ValueError("No path: entry or exit is blocked")
+
+        visited = [False] * (self.width * self.height)
+        parent = [-1] * (self.width * self.height)
+        move_to = [""] * (self.width * self.height)
+
+        queue: list[tuple[int, int]] = [(start_x, start_y)]
+        head = 0
+        visited[start_i] = True
+
+        letters = ("N", "E", "S", "W")
+
+        while head < len(queue):
+            x, y = queue[head]
+            head += 1
+
+            cur_i = self.cell_index(x, y)
+            if cur_i == goal_i:
+                break
+
+            cell_value = self.cell(x, y)
+
+            for k, (step_x, step_y, wall_here, _) in enumerate(self.DIRS):
+                if self.has_wall_value(cell_value, wall_here):
+                    continue
+
+                nx = x + step_x
+                ny = y + step_y
+                if not self.in_bounds(nx, ny):
+                    continue
+
+                ni = self.cell_index(nx, ny)
+                if blocked[ni] or visited[ni]:
+                    continue
+
+                visited[ni] = True
+                parent[ni] = cur_i
+                move_to[ni] = letters[k]
+                queue.append((nx, ny))
+
+        if not visited[goal_i]:
+            raise ValueError("No path found from entry to exit")
+
+        path_rev: list[str] = []
+        cur = goal_i
+        while cur != start_i:
+            path_rev.append(move_to[cur])
+            cur = parent[cur]
+
+        path_rev.reverse()
+        self.solver = "".join(path_rev)
+
+    def write_output_file_from_maze(self) -> None:
+        try:
+            with open(f"{self.output_file}", "w") as f:
+                for y in range(self.height):
+                    base = y * self.width
+                    line = ""
+                    for x in range(self.width):
+                        line += format(self.grid[base + x], "X")
+                    f.write(line + "\n")
+
+                f.write("\n")
+
+                ex, ey = self.entry
+                tx, ty = self.exit
+
+                f.write(f"{ex},{ey}\n")
+                f.write(f"{tx},{ty}\n")
+                f.write(self.solver + "\n")
+
+        except OSError as e:
+            print(f"Error writing output file: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    def generate(self) -> None:
         pattern_height = len(self.pattern)
         pattern_width = len(self.pattern[0])
 
@@ -422,5 +333,7 @@ class Maze:
             if self.path_exists_avoiding(blocked):
                 return
 
+            self.solve_shortest(blocked)
+            self.write_output_file_from_maze()
         raise ValueError(
             "Could not place a visible 42 without blocking the path")

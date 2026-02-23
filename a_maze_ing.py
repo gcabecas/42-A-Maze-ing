@@ -1,19 +1,10 @@
 import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
-from maze_gen import Maze
-from maze_output import write_output_file_from_maze
+from maze import Maze
 
 
 def main() -> None:
-    """Entry point of the program.
-
-    Reads a config file passed as argument, validates it, and prints the parsed
-    configuration. Exits with status code 1 on error.
-
-    Returns:
-        None
-    """
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt", file=sys.stderr)
         sys.exit(1)
@@ -32,29 +23,25 @@ def main() -> None:
         print(e, file=sys.stderr)
         sys.exit(1)
 
-    print_config(maze_data)
+    # print_config(maze_data)
 
     if maze_data.PERFECT:
-        maze = Maze(
-            maze_data.WIDTH,
-            maze_data.HEIGHT,
-            maze_data.SEED,
-            maze_data.ENTRY,
-            maze_data.EXIT)
-        maze.generate_with_42()
-        write_output_file_from_maze(maze, maze_data.OUTPUT_FILE)
-        print_maze(maze)
+        try:
+            maze = Maze(
+                maze_data.WIDTH,
+                maze_data.HEIGHT,
+                maze_data.SEED,
+                maze_data.ENTRY,
+                maze_data.EXIT,
+                maze_data.OUTPUT_FILE)
+            maze.generate()
+            print_maze(maze)
+        except ValueError as e:
+            print(f"Error generating maze: {e}", file=sys.stderr)
+            sys.exit(1)
 
 
 def print_config(cfg: MazeConfig) -> None:
-    """Print the validated configuration to stdout.
-
-    Args:
-        cfg: Validated maze configuration.
-
-    Returns:
-        None
-    """
     print("Config:")
     print(f"  WIDTH: {cfg.WIDTH}")
     print(f"  HEIGHT: {cfg.HEIGHT}")

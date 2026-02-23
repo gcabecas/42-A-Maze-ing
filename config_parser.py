@@ -1,4 +1,3 @@
-import time
 from typing import Any, Optional
 from pydantic import BaseModel, Field, model_validator
 
@@ -115,7 +114,7 @@ def read_config(filename: str) -> dict[str, str]:
         ValueError: If a non-comment line does not contain '='.
     """
     cfg: dict[str, str] = {}
-    with open(filename, "r", encoding="utf-8") as f:
+    with open(filename, "r") as f:
         for lineno, line in enumerate(f, start=1):
             s: str = line.strip()
             if not s or s.startswith("#"):
@@ -147,6 +146,4 @@ def verify_config(cfg: dict[str, str]) -> MazeConfig:
             formats, invalid values, etc.).
     """
     maze_config: MazeConfig = MazeConfig.model_validate(cfg)
-    if maze_config.SEED is None:
-        maze_config.SEED = time.time_ns() & 0xFFFFFFFF
     return maze_config
