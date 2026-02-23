@@ -1,21 +1,8 @@
-import time
 from typing import Any, Optional
 from pydantic import BaseModel, Field, model_validator
 
 
 class MazeConfig(BaseModel):
-    """Maze configuration validated by Pydantic.
-
-    Attributes:
-        WIDTH: Maze width (must be > 0).
-        HEIGHT: Maze height (must be > 0).
-        ENTRY: Entry coordinates as (x, y).
-        EXIT: Exit coordinates as (x, y).
-        OUTPUT_FILE: Output filename (non-empty).
-        PERFECT: Whether the maze must be perfect (single path).
-        SEED: Optional random seed for reproducibility.
-    """
-
     WIDTH: int = Field(gt=0)
     HEIGHT: int = Field(gt=0)
     ENTRY: tuple[int, int]
@@ -27,18 +14,6 @@ class MazeConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def convert_strings(cls, data: Any) -> Any:
-        """Convert raw string values from the config dict into proper types.
-
-        Args:
-            data: Raw config data (usually a dict[str, str]).
-
-        Returns:
-            The same dict after conversion.
-
-        Raises:
-            ValueError: If a value has a wrong format.
-            TypeError: If a value has an unexpected type.
-        """
         if not isinstance(data, dict):
             return data
 
@@ -97,25 +72,8 @@ class MazeConfig(BaseModel):
 
 
 def read_config(filename: str) -> dict[str, str]:
-    """Read a KEY=VALUE configuration file and return its content as a dict.
-
-    Notes:
-        - Empty lines are ignored.
-        - Lines starting with '#' are ignored.
-        - Every non-comment line must contain '='.
-
-    Args:
-        filename: Path to the config file.
-
-    Returns:
-        A dictionary mapping keys to raw string values.
-
-    Raises:
-        OSError: If the file cannot be opened.
-        ValueError: If a non-comment line does not contain '='.
-    """
     cfg: dict[str, str] = {}
-    with open(filename, "r", encoding="utf-8") as f:
+    with open(filename, "r") as f:
         for lineno, line in enumerate(f, start=1):
             s: str = line.strip()
             if not s or s.startswith("#"):
@@ -128,25 +86,5 @@ def read_config(filename: str) -> dict[str, str]:
 
 
 def verify_config(cfg: dict[str, str]) -> MazeConfig:
-    """Validate the raw config dict and ensure a usable seed is set.
-
-    This function validates and converts the raw configuration values using
-    `MazeConfig.model_validate`. If the optional `SEED` field is missing or
-    empty, a new seed is generated from the current time so the maze generation
-    can still be reproducible (the chosen seed is stored back into the returned
-    `MazeConfig` object).
-
-    Args:
-        cfg: Raw config dictionary (values are usually strings).
-
-    Returns:
-        A validated `MazeConfig` instance with `SEED` always set to an integer.
-
-    Raises:
-        pydantic.ValidationError: If validation fails (missing fields, wrong
-            formats, invalid values, etc.).
-    """
     maze_config: MazeConfig = MazeConfig.model_validate(cfg)
-    if maze_config.SEED is None:
-        maze_config.SEED = time.time_ns() & 0xFFFFFFFF
     return maze_config

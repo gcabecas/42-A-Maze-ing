@@ -1,19 +1,10 @@
 import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
-from maze_gen import Maze
-from maze_output import write_output_file_from_maze
+from maze import Maze
 
 
 def main() -> None:
-    """Entry point of the program.
-
-    Reads a config file passed as argument, validates it, and prints the parsed
-    configuration. Exits with status code 1 on error.
-
-    Returns:
-        None
-    """
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt", file=sys.stderr)
         sys.exit(1)
@@ -32,29 +23,26 @@ def main() -> None:
         print(e, file=sys.stderr)
         sys.exit(1)
 
-    print_config(maze_data)
+    # print_config(maze_data)
 
-    if maze_data.PERFECT:
+    try:
         maze = Maze(
             maze_data.WIDTH,
             maze_data.HEIGHT,
             maze_data.SEED,
             maze_data.ENTRY,
-            maze_data.EXIT)
-        maze.generate_with_42()
-        write_output_file_from_maze(maze, maze_data.OUTPUT_FILE)
+            maze_data.EXIT,
+            maze_data.OUTPUT_FILE,
+            maze_data.PERFECT)
+        maze.generate()
         print_maze(maze)
+        print(f"{maze.solver}")
+    except ValueError as e:
+        print(f"Error generating maze: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def print_config(cfg: MazeConfig) -> None:
-    """Print the validated configuration to stdout.
-
-    Args:
-        cfg: Validated maze configuration.
-
-    Returns:
-        None
-    """
     print("Config:")
     print(f"  WIDTH: {cfg.WIDTH}")
     print(f"  HEIGHT: {cfg.HEIGHT}")
@@ -68,33 +56,34 @@ def print_config(cfg: MazeConfig) -> None:
 def print_maze(maze: Maze) -> None:
     w = maze.width
     h = maze.height
+    g = maze.grid
+    idx = maze.cell_index
+
+    N = int(Maze.N)
+    E = int(Maze.E)
+    S = int(Maze.S)
+    W = int(Maze.W)
 
     line = "+"
     for x in range(w):
-        c = maze.cell(x, 0)
-        line += "---+" if (c & 1) else "   +"
+        c = g[idx(x, 0)]
+        line += "---+" if (c & N) else "   +"
     print(line)
 
     for y in range(h):
         line = ""
         for x in range(w):
-            c = maze.cell(x, y)
-
+            c = g[idx(x, y)]
             if x == 0:
-                line += "|" if (c & 8) else " "
-
-            if c == 15:
-                line += "## "
-            else:
-                line += "   "
-
-            line += "|" if (c & 2) else " "
+                line += "|" if (c & W) else " "
+            line += "## " if c == maze.ALL else "   "
+            line += "|" if (c & E) else " "
         print(line)
 
         line = "+"
         for x in range(w):
-            c = maze.cell(x, y)
-            line += "---+" if (c & 4) else "   +"
+            c = g[idx(x, y)]
+            line += "---+" if (c & S) else "   +"
         print(line)
 
 
