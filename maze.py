@@ -1,45 +1,45 @@
 import random
-from typing import Optional
 import sys
+from typing import Optional
 
 
 class Maze:
-    def __init__(self,
-                 width: int,
-                 height: int,
-                 seed: Optional[int],
-                 entry: tuple[int,
-                              int],
-                 exit: tuple[int,
-                             int],
-                 output_file: str) -> None:
+    N = 1
+    E = 2
+    S = 4
+    W = 8
+    ALL = N | E | S | W
 
+    DIRS = ((0, -1, 1, 4, "N"),
+            (1, 0, 2, 8, "E"),
+            (0, 1, 4, 1, "S"),
+            (-1, 0, 8, 2, "W"))
+
+    def __init__(self, width: int, height: int, seed: Optional[int],
+                 entry: tuple[int, int], exit: tuple[int, int],
+                 output_file: str, perfect: bool) -> None:
         self.width = width
         self.height = height
-        self.seed = seed
         self.entry = entry
         self.exit = exit
-        self.solver: str = ""
         self.output_file = output_file
+        self.perfect = perfect
+        self.solver: str = ""
 
         if seed is None:
-            self.rng = random.Random()
-            self.seed = self.rng.getrandbits(32)
+            seed = random.getrandbits(32)
+        self.seed = seed
+        self.rng = random.Random(self.seed)
 
-        self.grid = [15] * (width * height)
-        self.pattern = [
-            "1000111",
-            "1000001",
-            "1110111",
-            "0010100",
-            "0010111",
-        ]
-        self.DIRS = (
-            (0, -1, 1, 4),
-            (1, 0, 2, 8),
-            (0, 1, 4, 1),
-            (-1, 0, 8, 2),
-        )
+        self.grid = [self.ALL] * (width * height)
+
+        self.pattern = ["1000111", "1000001", "1110111", "0010100", "0010111"]
+
+        self.step_to_walls = {
+            (dx, dy): (w1, w2) for dx, dy, w1, w2, _ in self.DIRS}
+
+        self.pattern_ones = [(x, y) for y, row in enumerate(self.pattern)
+                             for x, ch in enumerate(row) if ch == "1"]
 
     def cell_index(self, x: int, y: int) -> int:
         return y * self.width + x
@@ -47,293 +47,247 @@ class Maze:
     def in_bounds(self, x: int, y: int) -> bool:
         return 0 <= x < self.width and 0 <= y < self.height
 
-    def cell(self, x: int, y: int) -> int:
-        return self.grid[self.cell_index(x, y)]
-
-    def has_wall_value(self, value: int, wall: int) -> bool:
-        return (value // wall) % 2 == 1
-
-    def has_wall(self, x: int, y: int, wall: int) -> bool:
-        return self.has_wall_value(self.cell(x, y), wall)
-
-    def remove_wall_at_index(self, i: int, wall: int) -> None:
-        if (self.grid[i] // wall) % 2 == 1:
-            self.grid[i] -= wall
-
-    def add_wall_at_index(self, i: int, wall: int) -> None:
-        if (self.grid[i] // wall) % 2 == 0:
-            self.grid[i] += wall
-
     def carve_between(self, x: int, y: int, nx: int, ny: int) -> None:
-        dx = nx - x
-        dy = ny - y
-
-        for test_dx, test_dy, a, b in self.DIRS:
-            if dx == test_dx and dy == test_dy:
-                current = self.cell_index(x, y)
-                neighbor = self.cell_index(nx, ny)
-
-                self.remove_wall_at_index(current, a)
-                self.remove_wall_at_index(neighbor, b)
-                return
+        wall_a, wall_b = self.step_to_walls[(nx - x, ny - y)]
+        self.grid[self.cell_index(x, y)] &= ~wall_a
+        self.grid[self.cell_index(nx, ny)] &= ~wall_b
 
     def close_between(self, x: int, y: int, nx: int, ny: int) -> None:
-        dx = nx - x
-        dy = ny - y
+        wall_a, wall_b = self.step_to_walls[(nx - x, ny - y)]
+        self.grid[self.cell_index(x, y)] |= wall_a
+        self.grid[self.cell_index(nx, ny)] |= wall_b
 
-        for test_dx, test_dy, a, b in self.DIRS:
-            if dx == test_dx and dy == test_dy:
-                current = self.cell_index(x, y)
-                neighbor = self.cell_index(nx, ny)
-
-                self.add_wall_at_index(current, a)
-                self.add_wall_at_index(neighbor, b)
-                return
-
-    def make_blocked(self, ox: int, oy: int) -> list[bool]:
+    def make_blocked(self, ox: int, oy: int) -> \
+            tuple[list[bool], list[tuple[int, int, int]]]:
+        idx = self.cell_index
+        cells = [(x, y, idx(x, y)) for x, y in
+                 ((ox + rx, oy + ry) for rx, ry in self.pattern_ones)]
         blocked = [False] * (self.width * self.height)
+        for _, _, i in cells:
+            blocked[i] = True
+        return blocked, cells
 
-        pattern_height = len(self.pattern)
-        pattern_width = len(self.pattern[0])
+    def apply_blocked_cells(
+            self, blocked_cells: list[tuple[int, int, int]]) -> None:
+        inb = self.in_bounds
+        for x, y, i in blocked_cells:
+            self.grid[i] = self.ALL
+            for dx, dy, *_ in self.DIRS:
+                nx, ny = x + dx, y + dy
+                if inb(nx, ny):
+                    self.close_between(x, y, nx, ny)
 
-        for row in range(pattern_height):
-            for col in range(pattern_width):
-                if self.pattern[row][col] == "1":
-                    x = ox + col
-                    y = oy + row
-                    blocked[self.cell_index(x, y)] = True
+    def find_path(self, blocked: list[bool], want_path: bool):
+        idx = self.cell_index
+        inb = self.in_bounds
+        grid = self.grid
+        dirs = self.DIRS
 
-        return blocked
+        start = idx(*self.entry)
+        goal = idx(*self.exit)
+        if blocked[start] or blocked[goal]:
+            return False, None, None
 
-    def apply_blocked_cells(self, blocked: list[bool]) -> None:
-        for row in range(self.height):
-            for col in range(self.width):
-                cell_i = self.cell_index(col, row)
-                if not blocked[cell_i]:
-                    continue
+        n = self.width * self.height
+        visited = [False] * n
+        parent: Optional[list[int]] = [-1] * n if want_path else None
+        move: Optional[list[str]] = [""] * n if want_path else None
 
-                self.grid[cell_i] = 15
-
-                for step_x, step_y, _, _ in self.DIRS:
-                    neighbor_x = col + step_x
-                    neighbor_y = row + step_y
-                    if self.in_bounds(neighbor_x, neighbor_y):
-                        self.close_between(col, row, neighbor_x, neighbor_y)
-
-    def path_exists_avoiding(self, blocked: list[bool]) -> bool:
-        start_x, start_y = self.entry
-        goal_x, goal_y = self.exit
-
-        if blocked[self.cell_index(start_x, start_y)]:
-            return False
-        if blocked[self.cell_index(goal_x, goal_y)]:
-            return False
-
-        visited = [False] * (self.width * self.height)
-
-        queue: list[tuple[int, int]] = [(start_x, start_y)]
-        queue_head = 0
-
-        visited[self.cell_index(start_x, start_y)] = True
-
-        while queue_head < len(queue):
-            x, y = queue[queue_head]
-            queue_head += 1
-
-            if (x, y) == (goal_x, goal_y):
-                return True
-
-            cell_value = self.cell(x, y)
-
-            for step_x, step_y, wall_here, _ in self.DIRS:
-                if self.has_wall_value(cell_value, wall_here):
-                    continue
-
-                next_x = x + step_x
-                next_y = y + step_y
-
-                if not self.in_bounds(next_x, next_y):
-                    continue
-
-                next_i = self.cell_index(next_x, next_y)
-                if blocked[next_i] or visited[next_i]:
-                    continue
-
-                visited[next_i] = True
-                queue.append((next_x, next_y))
-
-        return False
-
-    def generate_perfect_avoiding(self, blocked: list[bool]) -> None:
-        rng = random.Random(self.seed)
-
-        start_x, start_y = self.entry
-
-        self.grid = [15] * (self.width * self.height)
-
-        if blocked[self.cell_index(start_x, start_y)]:
-            raise ValueError("ENTRY is inside the 42 pattern")
-
-        visited = [False] * (self.width * self.height)
-        stack: list[tuple[int, int]] = [(start_x, start_y)]
-        visited[self.cell_index(start_x, start_y)] = True
-
-        while stack:
-            current_x, current_y = stack[-1]
-
-            unvisited_neighbors: list[tuple[int, int]] = []
-            for step_x, step_y, _, _ in self.DIRS:
-                neighbor_x = current_x + step_x
-                neighbor_y = current_y + step_y
-
-                if not self.in_bounds(neighbor_x, neighbor_y):
-                    continue
-
-                neighbor_i = self.cell_index(neighbor_x, neighbor_y)
-                if blocked[neighbor_i] or visited[neighbor_i]:
-                    continue
-
-                unvisited_neighbors.append((neighbor_x, neighbor_y))
-
-            if not unvisited_neighbors:
-                stack.pop()
-                continue
-
-            next_x, next_y = rng.choice(unvisited_neighbors)
-            self.carve_between(current_x, current_y, next_x, next_y)
-            visited[self.cell_index(next_x, next_y)] = True
-            stack.append((next_x, next_y))
-
-    def solve_shortest(self, blocked: list[bool]) -> None:
-        start_x, start_y = self.entry
-        goal_x, goal_y = self.exit
-
-        if (start_x, start_y) == (goal_x, goal_y):
-            self.solver = ""
-            return
-
-        start_i = self.cell_index(start_x, start_y)
-        goal_i = self.cell_index(goal_x, goal_y)
-
-        if blocked[start_i] or blocked[goal_i]:
-            raise ValueError("No path: entry or exit is blocked")
-
-        visited = [False] * (self.width * self.height)
-        parent = [-1] * (self.width * self.height)
-        move_to = [""] * (self.width * self.height)
-
-        queue: list[tuple[int, int]] = [(start_x, start_y)]
+        q = [self.entry]
         head = 0
-        visited[start_i] = True
+        visited[start] = True
 
-        letters = ("N", "E", "S", "W")
-
-        while head < len(queue):
-            x, y = queue[head]
+        while head < len(q):
+            x, y = q[head]
             head += 1
+            cur = idx(x, y)
+            if cur == goal:
+                return True, parent, move
 
-            cur_i = self.cell_index(x, y)
-            if cur_i == goal_i:
-                break
-
-            cell_value = self.cell(x, y)
-
-            for k, (step_x, step_y, wall_here, _) in enumerate(self.DIRS):
-                if self.has_wall_value(cell_value, wall_here):
+            cellv = grid[cur]
+            for dx, dy, wall, _, letter in dirs:
+                if cellv & wall:
                     continue
-
-                nx = x + step_x
-                ny = y + step_y
-                if not self.in_bounds(nx, ny):
+                nx, ny = x + dx, y + dy
+                if not inb(nx, ny):
                     continue
-
-                ni = self.cell_index(nx, ny)
+                ni = idx(nx, ny)
                 if blocked[ni] or visited[ni]:
                     continue
 
                 visited[ni] = True
-                parent[ni] = cur_i
-                move_to[ni] = letters[k]
-                queue.append((nx, ny))
+                if want_path:
+                    assert parent is not None and move is not None
+                    parent[ni] = cur
+                    move[ni] = letter
+                q.append((nx, ny))
 
-        if not visited[goal_i]:
+        return False, parent, move
+
+    def shortest_path_indices(self, blocked: list[bool]) -> list[int]:
+        ok, parent, _ = self.find_path(blocked, want_path=True)
+        if not ok or parent is None:
+            return []
+
+        idx = self.cell_index
+        start = idx(*self.entry)
+        cur = idx(*self.exit)
+
+        path: list[int] = []
+        while cur != start:
+            path.append(cur)
+            cur = parent[cur]
+            if cur == -1:
+                return []
+        path.append(start)
+        return path[::-1]
+
+    def solve_shortest(self, blocked: list[bool]) -> None:
+        if self.entry == self.exit:
+            self.solver = ""
+            return
+
+        ok, parent, move = self.find_path(blocked, want_path=True)
+        if not ok or parent is None or move is None:
             raise ValueError("No path found from entry to exit")
 
-        path_rev: list[str] = []
-        cur = goal_i
-        while cur != start_i:
-            path_rev.append(move_to[cur])
-            cur = parent[cur]
+        idx = self.cell_index
+        start = idx(*self.entry)
+        cur = idx(*self.exit)
 
-        path_rev.reverse()
-        self.solver = "".join(path_rev)
+        out: list[str] = []
+        while cur != start:
+            out.append(move[cur])
+            cur = parent[cur]
+        self.solver = "".join(reversed(out))
+
+    def generate_perfect_avoiding(self, blocked: list[bool]) -> int:
+        w, h = self.width, self.height
+        rng = self.rng
+        dirs = self.DIRS
+
+        sx, sy = self.entry
+        start = sy * w + sx
+        if blocked[start]:
+            raise ValueError("ENTRY is inside the 42 pattern")
+
+        n = w * h
+        self.grid = [self.ALL] * n
+
+        visited = [False] * n
+        visited[start] = True
+        count = 1
+        stack = [(sx, sy)]
+
+        while stack:
+            x, y = stack[-1]
+            cand = []
+            for dx, dy, *_ in dirs:
+                nx, ny = x + dx, y + dy
+                if nx < 0 or nx >= w or ny < 0 or ny >= h:
+                    continue
+                ni = ny * w + nx
+                if blocked[ni] or visited[ni]:
+                    continue
+                cand.append((nx, ny, ni))
+
+            if not cand:
+                stack.pop()
+                continue
+
+            nx, ny, ni = rng.choice(cand)
+            self.carve_between(x, y, nx, ny)
+            visited[ni] = True
+            count += 1
+            stack.append((nx, ny))
+
+        return count
+
+    def make_imperfect(self, blocked: list[bool]) -> None:
+        w, h = self.width, self.height
+        rng = self.rng
+        idx = self.cell_index
+        inb = self.in_bounds
+        g = self.grid
+
+        open_cells = w * h - sum(blocked)
+        target = max(1, int(open_cells ** 0.5))
+
+        opened = 0
+        while opened < target:
+            chosen = None
+            seen = 0
+
+            for y in range(h):
+                for x in range(w):
+                    i = idx(x, y)
+                    if blocked[i]:
+                        continue
+
+                    nx, ny = x + 1, y
+                    if inb(nx, ny):
+                        ni = idx(nx, ny)
+                        if (not blocked[ni]) and (g[i] & self.E):
+                            seen += 1
+                            if rng.randrange(seen) == 0:
+                                chosen = (x, y, nx, ny)
+
+                    nx, ny = x, y + 1
+                    if inb(nx, ny):
+                        ni = idx(nx, ny)
+                        if (not blocked[ni]) and (g[i] & self.S):
+                            seen += 1
+                            if rng.randrange(seen) == 0:
+                                chosen = (x, y, nx, ny)
+
+            if chosen is None:
+                return
+
+            x, y, nx, ny = chosen
+            self.carve_between(x, y, nx, ny)
+            opened += 1
 
     def write_output_file_from_maze(self) -> None:
         try:
-            with open(f"{self.output_file}", "w") as f:
-                for y in range(self.height):
-                    base = y * self.width
-                    line = ""
-                    for x in range(self.width):
-                        line += format(self.grid[base + x], "X")
-                    f.write(line + "\n")
-
-                f.write("\n")
-
-                ex, ey = self.entry
-                tx, ty = self.exit
-
-                f.write(f"{ex},{ey}\n")
-                f.write(f"{tx},{ty}\n")
-                f.write(self.solver + "\n")
-
+            with open(self.output_file, "w") as f:
+                f.write("\n".join("".join(f"{self.grid[y * self.width + x]:X}"
+                                          for x in range(self.width))for y in
+                                  range(self.height)))
+                f.write(f"\n\n{self.entry[0]},{self.entry[1]}\n{self.exit[0]},"
+                        f"{self.exit[1]}\n{self.solver}\n")
         except OSError as e:
             print(f"Error writing output file: {e}", file=sys.stderr)
             sys.exit(1)
 
     def generate(self) -> None:
-        pattern_height = len(self.pattern)
-        pattern_width = len(self.pattern[0])
-
-        if pattern_width > self.width or pattern_height > self.height:
+        ph, pw = len(self.pattern), len(self.pattern[0])
+        if pw > self.width or ph > self.height:
             raise ValueError("Maze too small to place the 42 pattern")
 
-        entry_x, entry_y = self.entry
-        exit_x, exit_y = self.exit
+        center = ((self.width - pw) // 2, (self.height - ph) // 2)
+        origins = [(x, y) for y in range(self.height - ph + 1) for x in
+                   range(self.width - pw + 1) if (x, y) != center]
+        self.rng.shuffle(origins)
+        origins.insert(0, center)
 
-        rng = random.Random(self.seed)
+        total_open = self.width * self.height - len(self.pattern_ones)
 
-        placement_candidates: list[tuple[int, int]] = []
-
-        center_x = (self.width - pattern_width) // 2
-        center_y = (self.height - pattern_height) // 2
-        placement_candidates.append((center_x, center_y))
-
-        for _ in range(self.width * self.height):
-            origin_x = rng.randrange(0, self.width - pattern_width + 1)
-            origin_y = rng.randrange(0, self.height - pattern_height + 1)
-            placement_candidates.append((origin_x, origin_y))
-
-        for origin_x, origin_y in placement_candidates:
-
-            if origin_x <= entry_x < origin_x + \
-                pattern_width and origin_y <= entry_y < origin_y \
-                    + pattern_height:
-                continue
-            if origin_x <= exit_x < origin_x + \
-                pattern_width and origin_y <= exit_y < origin_y \
-                    + pattern_height:
+        for ox, oy in origins:
+            if any(ox <= x < ox + pw and oy <= y < oy + ph for x,
+                   y in (self.entry, self.exit)):
                 continue
 
-            blocked = self.make_blocked(origin_x, origin_y)
+            blocked, cells = self.make_blocked(ox, oy)
+            if self.generate_perfect_avoiding(blocked) != total_open:
+                continue
+            if not self.perfect:
+                self.make_imperfect(blocked)
 
-            self.generate_perfect_avoiding(blocked)
-            self.apply_blocked_cells(blocked)
-
-            if self.path_exists_avoiding(blocked):
-                return
+            self.apply_blocked_cells(cells)
+            if not self.find_path(blocked, want_path=False)[0]:
+                continue
 
             self.solve_shortest(blocked)
             self.write_output_file_from_maze()
-        raise ValueError(
-            "Could not place a visible 42 without blocking the path")
+            return
+        raise ValueError("Could not place a visible 42")
