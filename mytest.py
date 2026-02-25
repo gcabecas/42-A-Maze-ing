@@ -215,6 +215,9 @@ def display(maze: Maze):
             xvar.img_maze.img)
         xvar.img_maze.width = 1000
         xvar.img_maze.height = 1000
+        if maze.width < 10 or maze.height < 10:
+            xvar.img_maze.width = 800
+            xvar.img_maze.height = 800
         MazeData.set_ppc(xvar.maze.width, xvar.maze.height, xvar.img_maze)
     except Exception as e:
         print(f"Error setup xvar (mlx, MazeData): {e}")
@@ -222,7 +225,7 @@ def display(maze: Maze):
     try:
         draw_all(xvar)
         img_pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
-        xvar.mlx.mlx_put_image_to_window(xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, 100, 5)
+        xvar.mlx.mlx_put_image_to_window(xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, img_pos, 5)
         print(img_pos)
         print(MazeData.ppc)
         print(xvar.maze.width)
