@@ -101,7 +101,7 @@ def key_press(keycode: int, xvar: XVar):
         draw_all(xvar)
         test = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
-            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 50)
+            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 5)
     elif keycode == 50:
         if xvar.gen_color is None:
             xvar.gen_color = iter(MazeData.new_color())
@@ -110,7 +110,7 @@ def key_press(keycode: int, xvar: XVar):
         draw_all(xvar)
         test = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
-            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 50)
+            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 5)
     elif keycode == 51:
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
         draw_all(xvar)
@@ -118,7 +118,7 @@ def key_press(keycode: int, xvar: XVar):
 
         pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
-            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, pos, 50)
+            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, pos, 5)
 
 
 def regen_maze() -> Maze:
