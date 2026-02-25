@@ -114,7 +114,7 @@ def key_press(keycode: int, xvar: XVar):
     elif keycode == 51:
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
         draw_all(xvar)
-        # draw_path(xvar)
+        draw_path(xvar)
 
         pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
@@ -145,11 +145,15 @@ def regen_maze() -> Maze:
 def draw_pattern(
         start: int,
         ppc: int,
-        img_maze: ImgData):
-    for i in [j * img_maze.sl for j in range(ppc)]:
-        new_start = start + i
+        img_maze: ImgData,
+        xvar: XVar,
+        color: int = MazeData.color):
+    # color = MazeData.color
+    all_start = [j * img_maze.sl for j in range(ppc)]
+    for i in all_start:
+        new_start = start + i# + path * (xvar.img_maze.bpp // 8)
         for k in range(0, ppc * 4, 4):
-            img_maze.data[new_start + k: new_start + k + 4] = MazeData.color.to_bytes(4, 'little')
+            img_maze.data[new_start + k: new_start + k + 4] = color.to_bytes(4, 'little')
 
 
 def draw_cell(
@@ -177,24 +181,62 @@ def draw_cell(
             img_maze.data[pos: pos + 4] = MazeData.color.to_bytes(4, 'little')
 
 
-# draw_path
-# def draw_path(xvar: XVar):
-    # start = xvar.maze.entry
-    # end = xvar.maze.exit
+def next_step(path: str, current: tuple) -> tuple:
+    if path == "E":
+        return [current[0] + 1, current[1]]
+    if path == "S":
+        return [current[0], current[1] + 1]
+    if path == "W":
+        return [current[0] - 1, current[1]]
+    if path == "N":
+        return [current[0] , current[1] - 1]
 
+# draw_path
+def draw_path(xvar: XVar):
+    current = xvar.maze.entry
+    end = xvar.maze.exit
+    solver = xvar.maze.solver
+    solver = solver[0:-1]
+    for i in solver:
+        next = next_step(i, current)
+        print(next)
+        # start = find_pos(current[0], current[1]) + xvar.img_maze.sl + (xvar.img_maze.bpp // 8)
+        # end_p = find_pos(next[0], next[1]) + xvar.img_maze.sl + (xvar.img_maze.bpp // 8)
+        test = find_pos(next[0], next[1], xvar) + xvar.img_maze.sl + (xvar.img_maze.bpp // 8)
+        draw_pattern(test, MazeData.ppc, xvar.img_maze, xvar, (0xFFFFFFEE))
+                
+                
+
+        current = next
+    draw_all(xvar)
+    print("test") 
+
+def find_pos(x: int, y: int, xvar: XVar) -> int:
+    pixel_x = x * MazeData.ppc
+    pixel_y = y * MazeData.ppc
+    opp = xvar.img_maze.bpp // 8
+    if x != 0:
+        pixel_x -= 1
+    offset = pixel_y * xvar.img_maze.sl + pixel_x * opp
+    return offset
 
 def draw_all(xvar: XVar):
+    entry = find_pos(xvar.maze.entry[0], xvar.maze.entry[1], xvar)
+    exit = find_pos(xvar.maze.exit[0], xvar.maze.exit[1], xvar)
+    draw_pattern(entry, MazeData.ppc, xvar.img_maze, xvar, (0xFFF08080))
+    draw_pattern(exit, MazeData.ppc, xvar.img_maze, xvar, (0xFFFF00FF))
     for i, value in enumerate(xvar.maze.grid):
         x = int(i % xvar.maze.width)
         y = int(i / xvar.maze.width)
-        pixel_x = x * MazeData.ppc
-        pixel_y = y * MazeData.ppc
-        opp = xvar.img_maze.bpp // 8
-        if x != 0:
-            pixel_x -= 1
-        offset = pixel_y * xvar.img_maze.sl + pixel_x * opp
+        # pixel_x = x * MazeData.ppc
+        # pixel_y = y * MazeData.ppc
+        # opp = xvar.img_maze.bpp // 8
+        # if x != 0:
+            # pixel_x -= 1
+        # offset = pixel_y * xvar.img_maze.sl + pixel_x * opp
+        offset = find_pos(x, y, xvar)
         if value == 15:
-            draw_pattern(offset, MazeData.ppc, xvar.img_maze)
+            draw_pattern(offset, MazeData.ppc, xvar.img_maze, xvar, MazeData.color)
         else:
             draw_cell(offset, value, MazeData.ppc, xvar.img_maze)
 
