@@ -66,12 +66,9 @@ class XVar:
         self.maze: Maze = None
     
 def gere_close_1(xvar):
+    xvar.mlx.mlx_destroy_image(xvar.mlx_ptr, xvar.img_maze.img)
+    xvar.mlx.mlx_destroy_window(xvar.mlx_ptr, xvar.win_1)
     xvar.mlx.mlx_loop_exit(xvar.mlx_ptr)
-
-
-def gere_close_2(xvar):
-    xvar.mlx.mlx_destroy_window(xvar.mlx_ptr, xvar.win_2)
-    xvar.win_2 = None
 
 
 def gere_mouse(button, x, y, xvar, win):
@@ -99,6 +96,9 @@ def key_press(keycode: int, xvar: XVar):
             xvar.img_maze.img)
         xvar.maze = new_maze
         MazeData.set_ppc(new_maze.width, new_maze.height, xvar.img_maze)
+        if MazeData.path_check == 1:
+            draw_path(xvar)
+            MazeData.path_check = 1
         draw_all(xvar)
         test = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
