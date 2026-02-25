@@ -20,6 +20,7 @@ class ImgData:
 class MazeData:
     color = 0x55FFFF00
     ppc = 0
+    path_check = 0
 
     @staticmethod
     def set_ppc(maze_w: int, maze_h: int, img_maze: ImgData):
@@ -113,8 +114,16 @@ def key_press(keycode: int, xvar: XVar):
             xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 5)
     elif keycode == 51:
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
-        draw_all(xvar)
-        draw_path(xvar)
+        if MazeData.path_check == 0:
+            draw_all(xvar)
+            draw_path(xvar)
+            MazeData.path_check = 1
+        else:
+            xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, 1000, 1000)
+            xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
+            xvar.img_maze.img)
+            draw_all(xvar)
+            MazeData.path_check = 0
 
         pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
