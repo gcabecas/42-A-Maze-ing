@@ -41,7 +41,7 @@ class MazeData:
         while 1:
             MazeData.color = 0x5500FFFF
             yield
-            MazeData.color = 0x550000FF
+            MazeData.color = 0x554169E1
             yield 
             MazeData.color = 0x55FFFF00
             yield
@@ -59,6 +59,7 @@ class XVar:
         self.win_1_w = 0
         self.win_1_h = 0
         self.img_maze: ImgData = ImgData()
+        self.img_menu: ImgData = ImgData()
         self.img_png: ImgData = ImgData()
         self.img_xpm: ImgData = ImgData()
         self.imgidx = 0
@@ -102,7 +103,7 @@ def key_press(keycode: int, xvar: XVar):
         draw_all(xvar)
         test = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
-            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 5)
+            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 50)
     elif keycode == 50:
         if xvar.gen_color is None:
             xvar.gen_color = iter(MazeData.new_color())
@@ -111,7 +112,7 @@ def key_press(keycode: int, xvar: XVar):
         draw_all(xvar)
         test = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
-            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 5)
+            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 50)
     elif keycode == 51:
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
         if MazeData.path_check == 0:
@@ -127,7 +128,9 @@ def key_press(keycode: int, xvar: XVar):
 
         pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
-            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, pos, 5)
+            xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, pos, 50)
+    elif keycode == 52:
+        gere_close_1(xvar)
 
 
 def regen_maze() -> Maze:
@@ -155,9 +158,7 @@ def draw_pattern(
         start: int,
         ppc: int,
         img_maze: ImgData,
-        xvar: XVar,
         color: int = MazeData.color):
-    # color = MazeData.color
     all_start = [j * img_maze.sl for j in range(ppc)]
     for i in all_start:
         new_start = start + i# + path * (xvar.img_maze.bpp // 8)
@@ -203,22 +204,16 @@ def next_step(path: str, current: tuple) -> tuple:
 # draw_path
 def draw_path(xvar: XVar):
     current = xvar.maze.entry
-    end = xvar.maze.exit
     solver = xvar.maze.solver
-    solver = solver[0:-1]
-    for i in solver:
+    for i in solver[0:-1]:
         next = next_step(i, current)
-        print(next)
-        # start = find_pos(current[0], current[1]) + xvar.img_maze.sl + (xvar.img_maze.bpp // 8)
-        # end_p = find_pos(next[0], next[1]) + xvar.img_maze.sl + (xvar.img_maze.bpp // 8)
         test = find_pos(next[0], next[1], xvar) + xvar.img_maze.sl + (xvar.img_maze.bpp // 8)
-        draw_pattern(test, MazeData.ppc, xvar.img_maze, xvar, (0xFFFFFFEE))
+        draw_pattern(test, MazeData.ppc, xvar.img_maze, (0xFFFFFFEE))
                 
                 
 
         current = next
     draw_all(xvar)
-    print("test") 
 
 def find_pos(x: int, y: int, xvar: XVar) -> int:
     pixel_x = x * MazeData.ppc
@@ -229,11 +224,14 @@ def find_pos(x: int, y: int, xvar: XVar) -> int:
     offset = pixel_y * xvar.img_maze.sl + pixel_x * opp
     return offset
 
+def draw_menu(xvar: XVar):
+    xvar.mlx.mlx_string_put(xvar.mlx_ptr, xvar.win_1, 400, 5,0xFFFFFFEE , "1:regen 2:color 3:path 4:exit")
+
 def draw_all(xvar: XVar):
     entry = find_pos(xvar.maze.entry[0], xvar.maze.entry[1], xvar)
     exit = find_pos(xvar.maze.exit[0], xvar.maze.exit[1], xvar)
-    draw_pattern(entry, MazeData.ppc, xvar.img_maze, xvar, (0xFFF08080))
-    draw_pattern(exit, MazeData.ppc, xvar.img_maze, xvar, (0xFFFF00FF))
+    draw_pattern(entry, MazeData.ppc, xvar.img_maze, (0xFFF08080))
+    draw_pattern(exit, MazeData.ppc, xvar.img_maze, (0xFFFF00FF))
     for i, value in enumerate(xvar.maze.grid):
         x = int(i % xvar.maze.width)
         y = int(i / xvar.maze.width)
@@ -245,9 +243,10 @@ def draw_all(xvar: XVar):
         # offset = pixel_y * xvar.img_maze.sl + pixel_x * opp
         offset = find_pos(x, y, xvar)
         if value == 15:
-            draw_pattern(offset, MazeData.ppc, xvar.img_maze, xvar, MazeData.color)
+            draw_pattern(offset, MazeData.ppc, xvar.img_maze, MazeData.color)
         else:
             draw_cell(offset, value, MazeData.ppc, xvar.img_maze)
+    draw_menu(xvar)
 
 
 def display(maze: Maze):
@@ -261,6 +260,7 @@ def display(maze: Maze):
             xvar.mlx_ptr, 1200, 1200, "A-maze-ing")
         xvar.win_1_w = 1200
         xvar.win_1_h = 1200
+        # img maze
         xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, 1000, 1000)
         xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
             xvar.img_maze.img)
@@ -276,7 +276,7 @@ def display(maze: Maze):
     try:
         draw_all(xvar)
         img_pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
-        xvar.mlx.mlx_put_image_to_window(xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, img_pos, 5)
+        xvar.mlx.mlx_put_image_to_window(xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, img_pos, 50)
         print(img_pos)
         print(MazeData.ppc)
         print(xvar.maze.width)
