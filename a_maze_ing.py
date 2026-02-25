@@ -2,6 +2,7 @@ import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
 from maze import Maze
+from mytest import display
 
 
 def main() -> None:
@@ -40,6 +41,12 @@ def main() -> None:
     except ValueError as e:
         print(f"Error generating maze: {e}", file=sys.stderr)
         sys.exit(1)
+
+# jsam test
+    try:
+        display(maze)
+    except Exception as e:
+        print(f"{e}")
 
 
 def print_config(cfg: MazeConfig) -> None:

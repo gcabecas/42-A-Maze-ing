@@ -114,42 +114,42 @@ def key_press(keycode: int, xvar: XVar):
     elif keycode == 51:
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
         draw_all(xvar)
-        draw_path(xvar)
+        # draw_path(xvar)
 
         pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
             xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, pos, 50)
+
+
 def regen_maze() -> Maze:
-        raw_cfg: dict[str, str] = read_config(sys.argv[1])
-        maze_conf: MazeConfig = verify_config(raw_cfg)
-        try:
-            maze = Maze(
-                maze_conf.WIDTH,
-                maze_conf.HEIGHT,
-                None,
-                maze_conf.ENTRY,
-                maze_conf.EXIT,
-                maze_conf.OUTPUT_FILE,
-                maze_conf.PERFECT)
-            maze.generate()
-            # print_maze(maze)
-            print(f"{maze.solver}")
-        except ValueError as e:
-            print(f"Error generating maze: {e}", file=sys.stderr)
-            sys.exit(1)
-        else:
-            return maze
+    raw_cfg: dict[str, str] = read_config(sys.argv[1])
+    maze_conf: MazeConfig = verify_config(raw_cfg)
+    try:
+        maze = Maze(
+            maze_conf.WIDTH,
+            maze_conf.HEIGHT,
+            None,
+            maze_conf.ENTRY,
+            maze_conf.EXIT,
+            maze_conf.OUTPUT_FILE,
+            maze_conf.PERFECT)
+        maze.generate()
+    except ValueError as e:
+        print(f"Error generating maze: {e}", file=sys.stderr)
+        sys.exit(1)
+    else:
+        return maze
+
 
 # All draw
 def draw_pattern(
         start: int,
         ppc: int,
         img_maze: ImgData):
-        for i in [j * img_maze.sl for j in range(ppc)]:
-            new_start = start + i
-            for k in range(0, ppc * 4, 4):
-                img_maze.data[new_start + k: new_start + k + 4] = MazeData.color.to_bytes(4, 'little')
-
+    for i in [j * img_maze.sl for j in range(ppc)]:
+        new_start = start + i
+        for k in range(0, ppc * 4, 4):
+            img_maze.data[new_start + k: new_start + k + 4] = MazeData.color.to_bytes(4, 'little')
 
 
 def draw_cell(
@@ -158,48 +158,30 @@ def draw_cell(
         ppc: int,
         img_maze: ImgData):
     if value & 1 << 0:
-        # 4 octets per pixel and img_maze.sl seems to be in octet per line
-        # print(size_cell)
         for i in range(0, ppc * 4, 4):
             pos = int(start + i)
-            # print(pos)
-            # img_maze.data[pos: pos + 4] = (color).to_bytes(4, 'little')
             img_maze.data[pos: pos + 4] = MazeData.color.to_bytes(4, 'little')
-            #for k in range(4):
-                #img_maze.data[pos + k] = (0xFFFFFF00 >> 8 * k) & 0xFF
     if value & 1 << 1:
         new_start = start + (ppc * 4)
-        #if start + size_cell * 4 == img_maze.sl:
-            #new_start = start + (size_cell - 1) * 4
         for i in range(ppc):
             pos = new_start + (i * img_maze.sl)
-            # img_maze.data[pos: pos + 4] = (color).to_bytes(4, 'little')
             img_maze.data[pos: pos + 4] = MazeData.color.to_bytes(4, 'little')
-            # for k in range(4):
-                # img_maze.data[pos + k] = MazeData.color.to_bytes(4, 'little')
     if value & 1 << 2:
         new_start = start + (ppc * img_maze.sl)
-        # for i in range(0, size_cell * 4, 4):
-            # print(i)
         for i in range(0, ppc * 4, 4):
             pos = new_start + i
-            # img_maze.data[pos: pos + 4] = (color).to_bytes(4, 'little')
             img_maze.data[pos: pos + 4] = MazeData.color.to_bytes(4, 'little')
-            # for k in range(4):
-                # img_maze.data[pos + k] = (0xFFFFFF00 >> 8 * k) & 0xFF
     if value & 1 << 3:
         for i in range(ppc):
             pos = start + (i * img_maze.sl)
             img_maze.data[pos: pos + 4] = MazeData.color.to_bytes(4, 'little')
-            #for k in range(4):
-                #img_maze.data[pos + k] = (0xFFFFFF00 >> 8 * k) & 0xFF
 
-#def draw_path
-def draw_path(xvar: XVar):
-    start = xvar.maze.entry
-    end = xvar.maze.exit
 
-    
+# draw_path
+# def draw_path(xvar: XVar):
+    # start = xvar.maze.entry
+    # end = xvar.maze.exit
+
 
 def draw_all(xvar: XVar):
     for i, value in enumerate(xvar.maze.grid):
@@ -216,8 +198,6 @@ def draw_all(xvar: XVar):
         else:
             draw_cell(offset, value, MazeData.ppc, xvar.img_maze)
 
-#def display_maze(maze: Maze, xvar: XVar, maze_data: MazeData):
-    #maze_data.re_init(maze.grid, maze.width, maze.height, xvar.img_maze)
 
 def display(maze: Maze):
     # setup xvar
@@ -249,8 +229,6 @@ def display(maze: Maze):
     except Exception as e:
         print(f"Error draw / put img: {e}")
         sys.exit(1)
-    
-    
 
     # Hook event
     xvar.mlx.mlx_mouse_hook(xvar.win_1, gere_mouse_1, xvar)
