@@ -92,7 +92,7 @@ def key_press(keycode: int, xvar: XVar):
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
         new_maze = regen_maze()
         xvar.maze = new_maze
-        xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, 1000, 1000)
+        xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, xvar.img_maze.width, xvar.img_maze.height)
         xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
             xvar.img_maze.img)
         print(xvar.img_maze.iformat)
@@ -122,7 +122,7 @@ def key_press(keycode: int, xvar: XVar):
             draw_path(xvar)
             MazeData.path_check = 1
         else:
-            xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, 1000, 1000)
+            xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, xvar.img_maze.width, xvar.img_maze.height)
             xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
             xvar.img_maze.img)
             draw_all(xvar)
