@@ -95,6 +95,8 @@ def key_press(keycode: int, xvar: XVar):
         xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, 1000, 1000)
         xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
             xvar.img_maze.img)
+        print(xvar.img_maze.iformat)
+
         xvar.maze = new_maze
         MazeData.set_ppc(new_maze.width, new_maze.height, xvar.img_maze)
         if MazeData.path_check == 1:
@@ -233,6 +235,7 @@ def draw_all(xvar: XVar):
     draw_pattern(entry, MazeData.ppc, xvar.img_maze, (0xFFF08080))
     draw_pattern(exit, MazeData.ppc, xvar.img_maze, (0xFFFF00FF))
     for i, value in enumerate(xvar.maze.grid):
+        print(i)
         x = int(i % xvar.maze.width)
         y = int(i / xvar.maze.width)
         # pixel_x = x * MazeData.ppc
@@ -254,18 +257,27 @@ def display(maze: Maze):
     xvar = XVar()
     xvar.maze = maze
     try:
+        img_h = 1000
+        img_w = 1000
+        if xvar.maze.width > 450 or xvar.maze.height > 450:
+            tmp = xvar.maze.width
+            if xvar.maze.height > tmp:
+                tmp = xvar.maze.height
+            img_w = tmp * 2
+            img_h = tmp * 2 + 1
         xvar.mlx = Mlx()
         xvar.mlx_ptr = xvar.mlx.mlx_init()
         xvar.win_1 = xvar.mlx.mlx_new_window(
-            xvar.mlx_ptr, 1200, 1200, "A-maze-ing")
-        xvar.win_1_w = 1200
-        xvar.win_1_h = 1200
+            xvar.mlx_ptr, img_w + 200, img_h + 200, "A-maze-ing")
+        xvar.win_1_w = img_w + 200
+        xvar.win_1_h = img_h + 200
         # img maze
-        xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, 1000, 1000)
+        xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, img_w, img_h)
         xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
             xvar.img_maze.img)
-        xvar.img_maze.width = 1000
-        xvar.img_maze.height = 1000
+        print(xvar.img_maze.iformat)
+        xvar.img_maze.width = img_w
+        xvar.img_maze.height = img_h
         if maze.width < 10 or maze.height < 10:
             xvar.img_maze.width = 800
             xvar.img_maze.height = 800
@@ -274,6 +286,7 @@ def display(maze: Maze):
         print(f"Error setup xvar (mlx, MazeData): {e}")
     # draw put img
     try:
+        print(len(xvar.img_maze.data))
         draw_all(xvar)
         img_pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, img_pos, 50)
