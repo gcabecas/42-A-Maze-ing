@@ -268,8 +268,28 @@ class Maze:
 
     def generate(self) -> None:
         ph, pw = len(self.pattern), len(self.pattern[0])
+
+        if self.entry[0] >= self.width or self.entry[1] >= self.height \
+                or self.exit[0] >= self.width or self.exit[1] >= self.height:
+            raise ValueError("ENTRY or EXIT is out of maze bounds")
+
         if pw > self.width or ph > self.height:
-            raise ValueError("Maze too small to place the 42 pattern")
+            print(
+                "Error: maze too small to place the pattern.",
+                file=sys.stderr,
+            )
+            blocked = [False] * (self.width * self.height)
+
+            self.generate_perfect_avoiding(blocked)
+            if not self.perfect:
+                self.make_imperfect(blocked)
+
+            if not self.find_path(blocked, want_path=False)[0]:
+                raise ValueError("No path found from entry to exit")
+
+            self.solve_shortest(blocked)
+            self.write_output_file_from_maze()
+            return
 
         center = ((self.width - pw) // 2, (self.height - ph) // 2)
         origins = [(x, y) for y in range(self.height - ph + 1) for x in
@@ -297,4 +317,5 @@ class Maze:
             self.solve_shortest(blocked)
             self.write_output_file_from_maze()
             return
-        raise ValueError("Could not place a visible 42")
+
+        raise ValueError("Could not place a visible pattern")
