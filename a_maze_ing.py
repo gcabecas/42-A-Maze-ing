@@ -1,3 +1,4 @@
+import os
 import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
@@ -24,8 +25,6 @@ def main() -> None:
         print(e, file=sys.stderr)
         sys.exit(1)
 
-    # print_config(maze_data)
-
     try:
         maze = Maze(
             maze_data.WIDTH,
@@ -36,31 +35,77 @@ def main() -> None:
             maze_data.OUTPUT_FILE,
             maze_data.PERFECT)
         maze.generate()
-        print_maze(maze)
-        print(f"{maze.solver}")
     except ValueError as e:
         print(f"Error generating maze: {e}", file=sys.stderr)
         sys.exit(1)
 
-# jsam test
-    try:
-        display(maze)
-    except Exception as e:
-        print(f"{e}")
+    loop_termiale(maze)
 
 
-def print_config(cfg: MazeConfig) -> None:
-    print("Config:")
-    print(f"  WIDTH: {cfg.WIDTH}")
-    print(f"  HEIGHT: {cfg.HEIGHT}")
-    print(f"  ENTRY: {cfg.ENTRY}")
-    print(f"  EXIT: {cfg.EXIT}")
-    print(f"  OUTPUT_FILE: {cfg.OUTPUT_FILE}")
-    print(f"  PERFECT: {cfg.PERFECT}")
-    print(f"  SEED: {cfg.SEED}")
+def loop_termiale(maze: Maze) -> None:
+    colors = [
+        "\x1b[31m",
+        "\x1b[32m",
+        "\x1b[33m",
+        "\x1b[34m",
+        "\x1b[35m",
+        "\x1b[36m",
+        "\x1b[37m",
+    ]
+    color_idx = 0
+    show_path = False
+
+    while True:
+        print_maze(maze, colors[color_idx], show_path)
+        choice = input("Choice? (1-4): ").strip()
+
+        if choice == "3":
+            color_idx = (color_idx + 1) % len(colors)
+        elif choice == "4":
+            return
+        elif choice == "1":
+            maze = Maze(
+                maze.width,
+                maze.height,
+                None,
+                maze.entry,
+                maze.exit,
+                maze.output_file,
+                maze.perfect
+            )
+            maze.generate()
+        elif choice == "2":
+            show_path = not show_path
 
 
-def print_maze(maze: Maze) -> None:
+def print_maze(maze: Maze, color: str, show_path: bool) -> None:
+    os.system("cls" if os.name == "nt" else "clear")
+
+    reset = "\x1b[0m"
+
+    def p(line: str) -> None:
+        print(f"{color}{line}{reset}")
+
+    path_cells = set()
+    if show_path and getattr(maze, "solver", ""):
+        x, y = maze.entry
+        path_cells.add((x, y))
+        for d in maze.solver:
+            if d == "N":
+                y -= 1
+            elif d == "S":
+                y += 1
+            elif d == "E":
+                x += 1
+            elif d == "W":
+                x -= 1
+            else:
+                continue
+            if 0 <= x < maze.width and 0 <= y < maze.height:
+                path_cells.add((x, y))
+            else:
+                break
+
     w = maze.width
     h = maze.height
     g = maze.grid
@@ -75,7 +120,7 @@ def print_maze(maze: Maze) -> None:
     for x in range(w):
         c = g[idx(x, 0)]
         line += "---+" if (c & N) else "   +"
-    print(line)
+    p(line)
 
     for y in range(h):
         line = ""
@@ -83,15 +128,32 @@ def print_maze(maze: Maze) -> None:
             c = g[idx(x, y)]
             if x == 0:
                 line += "|" if (c & W) else " "
-            line += "## " if c == maze.ALL else "   "
+
+            if show_path and (x, y) in path_cells:
+                cell = ".. "
+            else:
+                cell = "## " if c == maze.ALL else "   "
+
+            if (x, y) == maze.entry:
+                cell = "E  "
+            elif (x, y) == maze.exit:
+                cell = "X  "
+
+            line += cell
             line += "|" if (c & E) else " "
-        print(line)
+        p(line)
 
         line = "+"
         for x in range(w):
             c = g[idx(x, y)]
             line += "---+" if (c & S) else "   +"
-        print(line)
+        p(line)
+
+    p("=== A-Maze-ing ===")
+    print("1. Re-generate a new maze")
+    print("2. Show/hide path from entry to exit")
+    print("3. Rotate maze colors")
+    print("4. Quit")
 
 
 if __name__ == "__main__":
