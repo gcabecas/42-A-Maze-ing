@@ -90,19 +90,19 @@ def key_press(keycode: int, xvar: XVar):
     print(keycode)
     if keycode == 49 or keycode == 38 :
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
+        # xvar.mlx.mlx_destroy_image(xvar.mlx_ptr, xvar.img_maze.img)
         new_maze = regen_maze()
         xvar.maze = new_maze
-        xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, xvar.img_maze.width, xvar.img_maze.height)
-        xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
-            xvar.img_maze.img)
-        print(xvar.img_maze.iformat)
-
-        xvar.maze = new_maze
-        MazeData.set_ppc(new_maze.width, new_maze.height, xvar.img_maze)
+        #xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, xvar.img_maze.width, xvar.img_maze.height)
+        #xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
+            #xvar.img_maze.img)
+        #MazeData.set_ppc(new_maze.width, new_maze.height, xvar.img_maze)
+        clear_img(xvar)
         if MazeData.path_check == 1:
             draw_path(xvar)
             MazeData.path_check = 1
         draw_all(xvar)
+        
         test = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(
             xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, test, 50)
@@ -118,13 +118,15 @@ def key_press(keycode: int, xvar: XVar):
     elif keycode == 51:
         xvar.mlx.mlx_clear_window(xvar.mlx_ptr, xvar.win_1)
         if MazeData.path_check == 0:
-            draw_all(xvar)
+            clear_img(xvar)
             draw_path(xvar)
+            draw_all(xvar)
             MazeData.path_check = 1
         else:
-            xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, xvar.img_maze.width, xvar.img_maze.height)
-            xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
-            xvar.img_maze.img)
+            # xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, xvar.img_maze.width, xvar.img_maze.height)
+            # xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
+            # xvar.img_maze.img)
+            clear_img(xvar)
             draw_all(xvar)
             MazeData.path_check = 0
 
@@ -167,6 +169,9 @@ def draw_pattern(
         for k in range(0, ppc * 4, 4):
             img_maze.data[new_start + k: new_start + k + 4] = color.to_bytes(4, 'little')
 
+def clear_img(xvar: XVar):
+    for i in range(0, len(xvar.img_maze.data), 4):
+        xvar.img_maze.data[i: i + 4] = (0x00000000).to_bytes(4, 'little')
 
 def draw_cell(
         start: int,
@@ -251,7 +256,6 @@ def draw_all(xvar: XVar):
             draw_cell(offset, value, MazeData.ppc, xvar.img_maze)
     draw_menu(xvar)
 
-
 def display(maze: Maze):
     # setup xvar
     xvar = XVar()
@@ -265,12 +269,13 @@ def display(maze: Maze):
                 tmp = xvar.maze.height
             img_w = tmp * 2
             img_h = tmp * 2 + 1
+        xvar.win_1_w = img_w + 200
+        xvar.win_1_h = img_h + 200
         xvar.mlx = Mlx()
         xvar.mlx_ptr = xvar.mlx.mlx_init()
         xvar.win_1 = xvar.mlx.mlx_new_window(
-            xvar.mlx_ptr, img_w + 200, img_h + 200, "A-maze-ing")
-        xvar.win_1_w = img_w + 200
-        xvar.win_1_h = img_h + 200
+            xvar.mlx_ptr, xvar.win_1_w, xvar.win_1_h, "A-maze-ing")
+
         # img maze
         xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, img_w, img_h)
         xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
