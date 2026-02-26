@@ -1,17 +1,21 @@
 import sys
+from typing import Any
 from mlx import Mlx
 from maze import Maze
-from config_parser import MazeConfig, read_config, verify_config
 
 # Data
+
+
 class ImgData:
-    img = None
-    width = 0
-    height = 0
-    data = None
-    sl = 0
-    bpp = 0
-    iformat = 0
+    def __init__(self) -> None:
+        self.img: Any = None
+        self.width: int = 0
+        self.height: int = 0
+        self.data: bytearray = bytearray()
+        self.sl: int = 0
+        self.bpp: int = 0
+        self.iformat: int = 0
+
 
 class RenderData:
     def __init__(self) -> None:
@@ -29,8 +33,17 @@ class RenderData:
         self.color = colors[(i + 1) % len(colors)]
 
 # Renderer
+
+
 class Renderer:
-    def __init__(self, mlx, mlx_ptr, window, img: ImgData, maze: Maze, rend_data: RenderData) -> None:
+    def __init__(
+            self,
+            mlx: Mlx,
+            mlx_ptr: Any,
+            window: Any,
+            img: ImgData,
+            maze: Maze,
+            rend_data: RenderData) -> None:
         self.mlx: Mlx = mlx
         self.mlx_ptr = mlx_ptr
         self.window = window
@@ -54,14 +67,14 @@ class Renderer:
     def find_offset(self, x: int, y: int) -> int:
         opp = self.img.bpp // 8
         pxl_x = x * self.rend_data.ppc
-        pxl_y = y *self.rend_data.ppc
+        pxl_y = y * self.rend_data.ppc
         offset = pxl_y * self.img.sl + pxl_x * opp
         return offset
-    
+
     def clear_img(self) -> None:
         for i in range(0, len(self.img.data), 4):
             self.img.data[i: i + 4] = (0x00000000).to_bytes(4, 'little')
-    
+
     # drawing func
 
     def draw_block(self, offset: int, color: int) -> None:
@@ -72,33 +85,33 @@ class Renderer:
             line = offset + y * self.img.sl
             for x in range(ppc):
                 self.put_pixel(line + x * opp, color)
-    
+
     def draw_cell(self, offset: int, value: int) -> None:
         ppc = self.rend_data.ppc
         color = self.rend_data.color
         sl = self.img.sl
         opp = self.img.bpp // 8
 
-        #north
+        # north
         if value & 1 << 0:
             for x in range(ppc):
                 self.put_pixel(offset + x * opp, color)
 
-        #east
+        # east
         if value & 1 << 1:
             for y in range(ppc):
                 self.put_pixel(offset + y * sl + (ppc - 1) * opp, color)
 
-        #south
+        # south
         if value & 1 << 2:
             for x in range(ppc):
                 self.put_pixel(offset + (ppc - 1) * sl + x * opp, color)
 
-        #west
+        # west
         if value & 1 << 3:
             for y in range(ppc):
                 self.put_pixel(offset + y * sl, color)
-    
+
     def draw_maze(self) -> None:
         for i, value in enumerate(self.maze.grid):
             x = i % self.maze.width
@@ -118,7 +131,7 @@ class Renderer:
         exit_x, exit_y = self.maze.exit
         exit_off = self.find_offset(exit_x, exit_y)
         self.draw_block(exit_off, self.rend_data.exit_color)
-    
+
     def draw_path(self) -> None:
         current = self.maze.entry
         for direction in self.maze.solver[: -1]:
@@ -127,18 +140,23 @@ class Renderer:
             self.draw_block(offset, self.rend_data.path_color)
         self.draw_maze()
 
-    
     @staticmethod
-    def next_step(direction, current) -> tuple:
+    def next_step(direction: str, current: tuple[int, int]) -> tuple[int, int]:
         x, y = current
         moves = {"E": (x + 1, y),
                  "S": (x, y + 1),
                  "W": (x - 1, y),
                  "N": (x, y - 1)}
         return moves[direction]
-    
+
     def draw_menu(self) -> None:
-        self.mlx.mlx_string_put(self.mlx_ptr, self.window, 400, 5, self.rend_data.menu_color, "1.regen 2.color 3.path 4.exit")
+        self.mlx.mlx_string_put(
+            self.mlx_ptr,
+            self.window,
+            400,
+            5,
+            self.rend_data.menu_color,
+            "1.regen 2.color 3.path 4.exit")
 
     def draw_all(self) -> None:
         self.clear_img()
@@ -147,8 +165,8 @@ class Renderer:
         if self.rend_data.show_path:
             self.draw_path()
         self.draw_maze()
-    
-    def push(self, window_width) -> None:
+
+    def push(self, window_width: int) -> None:
         pos_x = (window_width - self.rend_data.ppc * self.maze.width) // 2
         self.mlx.mlx_put_image_to_window(
             self.mlx_ptr,
@@ -159,6 +177,8 @@ class Renderer:
         )
 
 # Application
+
+
 class App:
 
     def __init__(self, maze: Maze) -> None:
@@ -176,6 +196,7 @@ class App:
             self.maze,
             self.rend_data
         )
+
     def start(self) -> None:
         self.draw()
         self.mlx.mlx_key_hook(self.window, self.gere_keys, self)
@@ -205,7 +226,7 @@ class App:
         self.img.height = img_size
 
     def setup_window(self) -> None:
-        #size
+        # size
         self.win_w = self.img.width + 200
         self.win_h = self.img.height + 200
         self.window = self.mlx.mlx_new_window(
@@ -214,9 +235,9 @@ class App:
             self.win_h,
             "A-maze-ing"
         )
-    
+
     # Events
-    def gere_keys(self, keycode, _) -> None:
+    def gere_keys(self, keycode: int, _: Any) -> None:
         actions = {
             49: self.regenerate,
             50: self.change_color,
@@ -226,10 +247,10 @@ class App:
         action = actions.get(keycode)
         if action:
             action()
-        
+
     # Actions Events
     def regenerate(self) -> None:
-        self.maze = regen_maze()
+        self.maze = regen_maze(self.maze)
         self.renderer.maze = self.maze
         self.renderer.setup_ppc()
         self.draw()
@@ -241,12 +262,12 @@ class App:
     def toogle_path(self) -> None:
         self.rend_data.show_path = not self.rend_data.show_path
         self.draw()
-    
+
     def draw(self) -> None:
         self.mlx.mlx_clear_window(self.mlx_ptr, self.window)
         self.renderer.draw_all()
         self.renderer.push(self.win_w)
-    
+
     def close(self) -> None:
         self.renderer.clear_img()
         self.mlx.mlx_destroy_image(self.mlx_ptr, self.img.img)
@@ -254,25 +275,26 @@ class App:
         self.mlx.mlx_loop_exit(self.mlx_ptr)
 
 # Logic part
-def regen_maze() -> Maze:
-    raw_cfg: dict[str, str] = read_config(sys.argv[1])
-    maze_conf: MazeConfig = verify_config(raw_cfg)
+
+
+def regen_maze(maze: Maze) -> Maze:
     try:
-        maze = Maze(
-            maze_conf.WIDTH,
-            maze_conf.HEIGHT,
+        new_maze = Maze(
+            maze.width,
+            maze.height,
             None,
-            maze_conf.ENTRY,
-            maze_conf.EXIT,
-            maze_conf.OUTPUT_FILE,
-            maze_conf.PERFECT)
-        maze.generate()
+            maze.entry,
+            maze.exit,
+            maze.output_file,
+            maze.perfect)
+        new_maze.generate()
     except ValueError as e:
         print(f"Error generating maze: {e}", file=sys.stderr)
         sys.exit(1)
     else:
-        return maze
-    
+        return new_maze
+
+
 def display(maze: Maze) -> None:
     app = App(maze)
     app.start()
