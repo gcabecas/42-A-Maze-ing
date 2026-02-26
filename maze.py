@@ -77,7 +77,8 @@ class Maze:
                 if inb(nx, ny):
                     self.close_between(x, y, nx, ny)
 
-    def find_path(self, blocked: list[bool], want_path: bool):
+    def find_path(self, blocked: list[bool], want_path: bool) -> \
+            tuple[bool, Optional[list[int]], Optional[list[str]]]:
         idx = self.cell_index
         inb = self.in_bounds
         grid = self.grid
@@ -203,16 +204,15 @@ class Maze:
 
         return count
 
-    def make_imperfect(self, blocked) -> None:
+    def make_imperfect(self, blocked: list[bool]) -> None:
         w, h = self.width, self.height
         n = w * h
         g = self.grid
         rng = self.rng
 
         open_cells = n - int(sum(blocked))
-        k = max(1, int(open_cells ** 0.5))  # ton "target"
+        k = max(1, int(open_cells ** 0.5))
 
-        # sample de k arêtes (i, dir) où dir: 0=E, 1=S
         sample: list[tuple[int, int]] = []
         seen = 0
 
@@ -222,7 +222,6 @@ class Maze:
 
             x = i % w
 
-            # arête vers l'Est
             if x + 1 < w:
                 ni = i + 1
                 if (not blocked[ni]) and (g[i] & self.E):
@@ -234,7 +233,6 @@ class Maze:
                         if j < k:
                             sample[j] = (i, 0)
 
-            # arête vers le Sud
             if i + w < n:
                 ni = i + w
                 if (not blocked[ni]) and (g[i] & self.S):
@@ -246,7 +244,6 @@ class Maze:
                         if j < k:
                             sample[j] = (i, 1)
 
-        # ouvre les murs choisis
         for i, d in sample:
             if d == 0:
                 ni = i + 1
