@@ -235,7 +235,7 @@ def draw_all(xvar: XVar):
     draw_pattern(entry, MazeData.ppc, xvar.img_maze, (0xFFF08080))
     draw_pattern(exit, MazeData.ppc, xvar.img_maze, (0xFFFF00FF))
     for i, value in enumerate(xvar.maze.grid):
-        print(i)
+        # print(i)
         x = int(i % xvar.maze.width)
         y = int(i / xvar.maze.width)
         # pixel_x = x * MazeData.ppc
@@ -275,7 +275,7 @@ def display(maze: Maze):
         xvar.img_maze.img = xvar.mlx.mlx_new_image(xvar.mlx_ptr, img_w, img_h)
         xvar.img_maze.data, xvar.img_maze.bpp, xvar.img_maze.sl, xvar.img_maze.iformat = xvar.mlx.mlx_get_data_addr(
             xvar.img_maze.img)
-        print(xvar.img_maze.iformat)
+        # print(xvar.img_maze.iformat)
         xvar.img_maze.width = img_w
         xvar.img_maze.height = img_h
         if maze.width < 10 or maze.height < 10:
@@ -286,13 +286,10 @@ def display(maze: Maze):
         print(f"Error setup xvar (mlx, MazeData): {e}")
     # draw put img
     try:
-        print(len(xvar.img_maze.data))
+        # print(len(xvar.img_maze.data))
         draw_all(xvar)
         img_pos = (xvar.win_1_w - MazeData.ppc * xvar.maze.width) // 2
         xvar.mlx.mlx_put_image_to_window(xvar.mlx_ptr, xvar.win_1, xvar.img_maze.img, img_pos, 50)
-        print(img_pos)
-        print(MazeData.ppc)
-        print(xvar.maze.width)
     except Exception as e:
         print(f"Error draw / put img: {e}")
         sys.exit(1)
