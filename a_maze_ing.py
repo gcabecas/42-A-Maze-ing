@@ -3,7 +3,7 @@ import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
 from maze import Maze
-from mytest import display
+from display import display
 
 
 def main() -> None:
@@ -39,7 +39,11 @@ def main() -> None:
         print(f"Error generating maze: {e}", file=sys.stderr)
         sys.exit(1)
 
-    loop_termiale(maze)
+    try:
+        display(maze)
+    except Exception as e:
+        print(f"{e}")
+    #loop_termiale(maze)
 
 
 def loop_termiale(maze: Maze) -> None:

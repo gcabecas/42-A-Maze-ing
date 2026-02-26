@@ -1,4 +1,5 @@
 import sys
+from typing import Any
 from mlx import Mlx
 from maze import Maze
 from config_parser import MazeConfig, read_config, verify_config
@@ -30,7 +31,7 @@ class RenderData:
 
 # Renderer
 class Renderer:
-    def __init__(self, mlx, mlx_ptr, window, img: ImgData, maze: Maze, rend_data: RenderData) -> None:
+    def __init__(self, mlx: Mlx, mlx_ptr: Any, window: Any, img: ImgData, maze: Maze, rend_data: RenderData) -> None:
         self.mlx: Mlx = mlx
         self.mlx_ptr = mlx_ptr
         self.window = window
@@ -185,7 +186,7 @@ class App:
     def setup_image(self) -> None:
         img_size = 1000
         if self.maze.width > 300 or self.maze.height > 300:
-            img_size = max(self.maze.width, self.maze.height) * 3
+            img_size = max(self.maze.width, self.maze.height) * 4
         self.img = ImgData()
 
         self.img.img = self.mlx.mlx_new_image(
