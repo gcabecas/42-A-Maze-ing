@@ -203,49 +203,59 @@ class Maze:
 
         return count
 
-    def make_imperfect(self, blocked: list[bool]) -> None:
+    def make_imperfect(self, blocked) -> None:
         w, h = self.width, self.height
-        rng = self.rng
-        idx = self.cell_index
-        inb = self.in_bounds
+        n = w * h
         g = self.grid
+        rng = self.rng
 
-        open_cells = w * h - sum(blocked)
-        target = max(1, int(open_cells ** 0.5))
+        open_cells = n - int(sum(blocked))
+        k = max(1, int(open_cells ** 0.5))  # ton "target"
 
-        opened = 0
-        while opened < target:
-            chosen = None
-            seen = 0
+        # sample de k arêtes (i, dir) où dir: 0=E, 1=S
+        sample: list[tuple[int, int]] = []
+        seen = 0
 
-            for y in range(h):
-                for x in range(w):
-                    i = idx(x, y)
-                    if blocked[i]:
-                        continue
+        for i in range(n):
+            if blocked[i]:
+                continue
 
-                    nx, ny = x + 1, y
-                    if inb(nx, ny):
-                        ni = idx(nx, ny)
-                        if (not blocked[ni]) and (g[i] & self.E):
-                            seen += 1
-                            if rng.randrange(seen) == 0:
-                                chosen = (x, y, nx, ny)
+            x = i % w
 
-                    nx, ny = x, y + 1
-                    if inb(nx, ny):
-                        ni = idx(nx, ny)
-                        if (not blocked[ni]) and (g[i] & self.S):
-                            seen += 1
-                            if rng.randrange(seen) == 0:
-                                chosen = (x, y, nx, ny)
+            # arête vers l'Est
+            if x + 1 < w:
+                ni = i + 1
+                if (not blocked[ni]) and (g[i] & self.E):
+                    seen += 1
+                    if len(sample) < k:
+                        sample.append((i, 0))
+                    else:
+                        j = rng.randrange(seen)
+                        if j < k:
+                            sample[j] = (i, 0)
 
-            if chosen is None:
-                return
+            # arête vers le Sud
+            if i + w < n:
+                ni = i + w
+                if (not blocked[ni]) and (g[i] & self.S):
+                    seen += 1
+                    if len(sample) < k:
+                        sample.append((i, 1))
+                    else:
+                        j = rng.randrange(seen)
+                        if j < k:
+                            sample[j] = (i, 1)
 
-            x, y, nx, ny = chosen
-            self.carve_between(x, y, nx, ny)
-            opened += 1
+        # ouvre les murs choisis
+        for i, d in sample:
+            if d == 0:
+                ni = i + 1
+                g[i] &= ~self.E
+                g[ni] &= ~self.W
+            else:
+                ni = i + w
+                g[i] &= ~self.S
+                g[ni] &= ~self.N
 
     def write_output_file_from_maze(self) -> None:
         try:
