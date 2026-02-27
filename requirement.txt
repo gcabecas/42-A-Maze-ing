@@ -1,4 +1,4 @@
-flake8
-mypy
-pydantic
+flake8==7.3.0
+mypy==1.19.1
+pydantic==2.12.5
 ./mlx-2.2-py3-none-any.whl

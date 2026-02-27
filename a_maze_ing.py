@@ -6,6 +6,23 @@ from display import display
 
 
 def main() -> None:
+    """Run the maze application from the command line.
+
+    This function parses command-line arguments, loads and validates
+    the configuration file, generates the maze, and launches the
+    graphical display. It handles all user-facing errors and exits
+    the program with a non-zero status code when a failure occurs.
+
+    The expected usage is:
+        python3 a_maze_ing.py config.txt
+
+    Returns:
+        None
+
+    Raises:
+        SystemExit: If an error occurs during argument parsing,
+        configuration loading, maze generation, or display.
+    """
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt", file=sys.stderr)
         sys.exit(1)
