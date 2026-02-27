@@ -191,7 +191,7 @@ class App:
     def setup_image(self) -> None:
         img_size = 1000
         if self.maze.width > 300 or self.maze.height > 300:
-            img_size = max(self.maze.width, self.maze.height) * 3
+            img_size = max(self.maze.width, self.maze.height) * 4
         self.img = ImgData()
 
         self.img.img = self.mlx.mlx_new_image(
