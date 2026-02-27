@@ -4,6 +4,13 @@ from typing import Optional
 
 
 class Maze:
+    """Represent and generate a maze with optional embedded pattern.
+
+    This class handles maze generation (perfect or imperfect),
+    shortest-path solving, pattern blocking, and output file writing.
+    The maze is internally represented as a grid of bitmasks encoding
+    walls in the four cardinal directions.
+    """
     N = 1
     E = 2
     S = 4
@@ -18,6 +25,20 @@ class Maze:
     def __init__(self, width: int, height: int, seed: Optional[int],
                  entry: tuple[int, int], exit: tuple[int, int],
                  output_file: str, perfect: bool) -> None:
+        """Initialize a Maze instance.
+
+    Args:
+        width: Width of the maze in cells.
+        height: Height of the maze in cells.
+        seed: Optional random seed for deterministic generation.
+        entry: (x, y) coordinates of the maze entry.
+        exit: (x, y) coordinates of the maze exit.
+        output_file: Path to the output file.
+        perfect: Whether the maze must be perfect (acyclic).
+
+    Returns:
+        None
+        """
         self.width = width
         self.height = height
         self.entry = entry
@@ -42,23 +63,74 @@ class Maze:
                              for x, ch in enumerate(row) if ch == "1"]
 
     def cell_index(self, x: int, y: int) -> int:
+        """Return the linear index of a cell.
+
+        Args:
+            x: X-coordinate of the cell.
+            y: Y-coordinate of the cell.
+
+        Returns:
+            The index in the internal grid list.
+        """
         return y * self.width + x
 
     def in_bounds(self, x: int, y: int) -> bool:
+        """Check whether a cell is inside maze bounds.
+
+    Args:
+        x: X-coordinate.
+        y: Y-coordinate.
+
+    Returns:
+        True if the coordinates are valid, False otherwise.
+        """
         return 0 <= x < self.width and 0 <= y < self.height
 
     def carve_between(self, x: int, y: int, nx: int, ny: int) -> None:
+        """Remove the wall between two adjacent cells.
+
+            Args:
+                x: X-coordinate of the first cell.
+                y: Y-coordinate of the first cell.
+                nx: X-coordinate of the neighboring cell.
+                ny: Y-coordinate of the neighboring cell.
+
+            Returns:
+                None
+            """
         wall_a, wall_b = self.step_to_walls[(nx - x, ny - y)]
         self.grid[self.cell_index(x, y)] &= ~wall_a
         self.grid[self.cell_index(nx, ny)] &= ~wall_b
 
     def close_between(self, x: int, y: int, nx: int, ny: int) -> None:
+        """Add a wall between two adjacent cells.
+
+            Args:
+                x: X-coordinate of the first cell.
+                y: Y-coordinate of the first cell.
+                nx: X-coordinate of the neighboring cell.
+                ny: Y-coordinate of the neighboring cell.
+
+            Returns:
+                None
+        """
         wall_a, wall_b = self.step_to_walls[(nx - x, ny - y)]
         self.grid[self.cell_index(x, y)] |= wall_a
         self.grid[self.cell_index(nx, ny)] |= wall_b
 
     def make_blocked(self, ox: int, oy: int) -> \
             tuple[list[bool], list[tuple[int, int, int]]]:
+        """Create a blocked mask for a pattern placed at a position.
+
+        Args:
+            ox: X-origin of the pattern.
+            oy: Y-origin of the pattern.
+
+        Returns:
+            A tuple containing:
+                - A boolean list marking blocked cells.
+                - A list of blocked cell coordinates and indices.
+        """
         idx = self.cell_index
         cells = [(x, y, idx(x, y)) for x, y in
                  ((ox + rx, oy + ry) for rx, ry in self.pattern_ones)]
@@ -69,6 +141,15 @@ class Maze:
 
     def apply_blocked_cells(
             self, blocked_cells: list[tuple[int, int, int]]) -> None:
+        """Apply wall closures to blocked cells.
+
+        Args:
+            blocked_cells: List of blocked cell tuples
+                (x, y, index).
+
+        Returns:
+            None
+        """
         inb = self.in_bounds
         for x, y, i in blocked_cells:
             self.grid[i] = self.ALL
@@ -79,6 +160,18 @@ class Maze:
 
     def find_path(self, blocked: list[bool], want_path: bool) -> \
             tuple[bool, Optional[list[int]], Optional[list[str]]]:
+        """Perform BFS to determine if a path exists.
+
+        Args:
+            blocked: Boolean list marking blocked cells.
+            want_path: Whether to reconstruct the path.
+
+        Returns:
+            A tuple containing:
+                - True if a path exists, False otherwise.
+                - Parent index list if requested.
+                - Move direction list if requested.
+        """
         idx = self.cell_index
         inb = self.in_bounds
         grid = self.grid
@@ -126,6 +219,15 @@ class Maze:
         return False, parent, move
 
     def shortest_path_indices(self, blocked: list[bool]) -> list[int]:
+        """Return the shortest path as cell indices.
+
+        Args:
+            blocked: Boolean list marking blocked cells.
+
+        Returns:
+            A list of cell indices forming the shortest path.
+            Returns an empty list if no path exists.
+        """
         ok, parent, _ = self.find_path(blocked, want_path=True)
         if not ok or parent is None:
             return []
@@ -144,6 +246,17 @@ class Maze:
         return path[::-1]
 
     def solve_shortest(self, blocked: list[bool]) -> None:
+        """Compute and store the shortest path as directions.
+
+        Args:
+            blocked: Boolean list marking blocked cells.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If no path exists from entry to exit.
+        """
         if self.entry == self.exit:
             self.solver = ""
             return
@@ -163,6 +276,17 @@ class Maze:
         self.solver = "".join(reversed(out))
 
     def generate_perfect_avoiding(self, blocked: list[bool]) -> int:
+        """Generate a perfect maze avoiding blocked cells.
+
+        Args:
+            blocked: Boolean list marking blocked cells.
+
+        Returns:
+            The number of reachable carved cells.
+
+        Raises:
+            ValueError: If the entry is inside a blocked cell.
+        """
         w, h = self.width, self.height
         rng = self.rng
         dirs = self.DIRS
@@ -205,6 +329,14 @@ class Maze:
         return count
 
     def make_imperfect(self, blocked: list[bool]) -> None:
+        """Introduce cycles to make the maze imperfect.
+
+        Args:
+            blocked: Boolean list marking blocked cells.
+
+        Returns:
+            None
+        """
         w, h = self.width, self.height
         n = w * h
         g = self.grid
@@ -255,6 +387,20 @@ class Maze:
                 g[ni] &= ~self.N
 
     def write_output_file_from_maze(self) -> None:
+        """Write the maze and solution to the output file.
+
+        The file contains:
+            - The maze grid encoded in hexadecimal.
+            - Entry coordinates.
+            - Exit coordinates.
+            - The shortest path solution.
+
+        Returns:
+            None
+
+        Raises:
+            SystemExit: If the file cannot be written.
+        """
         try:
             with open(self.output_file, "w") as f:
                 f.write("\n".join("".join(f"{self.grid[y * self.width + x]:X}"
@@ -267,6 +413,22 @@ class Maze:
             sys.exit(1)
 
     def generate(self) -> None:
+        """Generate the maze with optional pattern placement.
+
+        This method:
+            - Validates entry and exit positions.
+            - Attempts to place a visible pattern.
+            - Generates a perfect or imperfect maze.
+            - Ensures a valid path exists.
+            - Solves the maze.
+            - Writes the output file.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If generation fails or constraints are invalid.
+        """
         ph, pw = len(self.pattern), len(self.pattern[0])
 
         if self.entry[0] >= self.width or self.entry[1] >= self.height \

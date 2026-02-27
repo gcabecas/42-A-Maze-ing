@@ -3,13 +3,6 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class MazeConfig(BaseModel):
-    WIDTH: int = Field(gt=0)
-    HEIGHT: int = Field(gt=0)
-    ENTRY: tuple[int, int]
-    EXIT: tuple[int, int]
-    OUTPUT_FILE: str = Field(min_length=1)
-    PERFECT: bool
-    SEED: Optional[int] = None
     """Configuration model for maze generation.
 
     This model validates and stores all parameters required to generate
@@ -26,6 +19,14 @@ class MazeConfig(BaseModel):
         PERFECT (bool): Whether the maze is perfect (no loops).
         SEED (Optional[int]): Optional random seed.
     """
+    WIDTH: int = Field(gt=0)
+    HEIGHT: int = Field(gt=0)
+    ENTRY: tuple[int, int]
+    EXIT: tuple[int, int]
+    OUTPUT_FILE: str = Field(min_length=1)
+    PERFECT: bool
+    SEED: Optional[int] = None
+
     @model_validator(mode="before")
     @classmethod
     def convert_strings(cls, data: Any) -> Any:
