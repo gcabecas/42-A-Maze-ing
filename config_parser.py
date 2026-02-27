@@ -21,17 +21,14 @@ class MazeConfig(BaseModel):
             try:
                 data["WIDTH"] = int(data["WIDTH"])
             except (ValueError, TypeError):
-                raise ValueError(
-                    f"WIDTH must be an int (got {
-                        data['WIDTH']})")
+                raise ValueError(f"WIDTH must be an int (got {data['WIDTH']})")
 
         if "HEIGHT" in data:
             try:
                 data["HEIGHT"] = int(data["HEIGHT"])
             except (ValueError, TypeError):
-                raise ValueError(
-                    f"HEIGHT must be an int (got {
-                        data['HEIGHT']})")
+                raise ValueError(f"HEIGHT must be an int (got "
+                                 f"{data['HEIGHT']})")
 
         if "SEED" in data and data["SEED"] not in ("", None):
             try:
@@ -44,18 +41,16 @@ class MazeConfig(BaseModel):
                 a, b = str(data["ENTRY"]).split(",", 1)
                 data["ENTRY"] = (int(a.strip()), int(b.strip()))
             except (ValueError, TypeError):
-                raise ValueError(
-                    f"ENTRY must be 'x,y' with 2 ints (got {
-                        data['ENTRY']})")
+                raise ValueError(f"ENTRY must be 'x,y' with 2 ints (got "
+                                 f"{data['ENTRY']})")
 
         if "EXIT" in data:
             try:
                 a, b = str(data["EXIT"]).split(",", 1)
                 data["EXIT"] = (int(a.strip()), int(b.strip()))
             except (ValueError, TypeError):
-                raise ValueError(
-                    f"EXIT must be 'x,y' with 2 ints (got {
-                        data['EXIT']})")
+                raise ValueError(f"EXIT must be 'x,y' with 2 ints (got "
+                                 f"{data['EXIT']})")
 
         if "PERFECT" in data:
             v: str = str(data["PERFECT"]).strip().lower()
@@ -64,9 +59,8 @@ class MazeConfig(BaseModel):
             elif v == "false":
                 data["PERFECT"] = False
             else:
-                raise ValueError(
-                    f"PERFECT must be True or False (got {
-                        data['PERFECT']})")
+                raise ValueError(f"PERFECT must be True or False (got "
+                                 f"{data['PERFECT']})")
 
         return data
 

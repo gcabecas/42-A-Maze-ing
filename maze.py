@@ -273,6 +273,9 @@ class Maze:
                 or self.exit[0] >= self.width or self.exit[1] >= self.height:
             raise ValueError("ENTRY or EXIT is out of maze bounds")
 
+        if self.entry == self.exit:
+            raise ValueError("ENTRY and EXIT cannot be the same")
+
         if pw > self.width or ph > self.height:
             print(
                 "Error: maze too small to place the pattern.",
