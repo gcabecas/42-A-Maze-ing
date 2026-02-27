@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Optional
 from mlx import Mlx
-from maze import Maze
+from mazegen import Maze
 
 
 class ImgData:

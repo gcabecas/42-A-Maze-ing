@@ -2,7 +2,7 @@ PYTHON = .venv/bin/python
 MAIN = a_maze_ing.py
 CONFIG ?= config.txt
 
-.PHONY: venv install run debug clean lint lint-strict
+.PHONY: venv install run debug clean lint lint-strict package
 
 run:
 	$(PYTHON) $(MAIN) $(CONFIG)
@@ -17,7 +17,7 @@ debug:
 	$(PYTHON) -m pdb $(MAIN) $(CONFIG)
 
 clean:
-	rm -rf __pycache__ .mypy_cache
+	rm -rf __pycache__ .mypy_cache mazegen/__pycache__
 
 lint:
 	.venv/bin/flake8 --exclude .venv
@@ -26,3 +26,7 @@ lint:
 lint-strict:
 	.venv/bin/flake8 --exclude .venv .
 	.venv/bin/mypy . --strict
+
+build:
+	$(PYTHON) -m pip install --upgrade build setuptools wheel
+	$(PYTHON) -m build

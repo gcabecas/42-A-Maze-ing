@@ -261,7 +261,7 @@ class Maze:
                                           for x in range(self.width))for y in
                                   range(self.height)))
                 f.write(f"\n\n{self.entry[0]},{self.entry[1]}\n{self.exit[0]},"
-                        f"{self.exit[1]}\n{self.solver}\n")
+                        f"{self.exit[1]}\n{self.solver}")
         except OSError as e:
             print(f"Error writing output file: {e}", file=sys.stderr)
             sys.exit(1)

@@ -1,7 +1,7 @@
 import sys
 from pydantic import ValidationError
 from config_parser import MazeConfig, read_config, verify_config
-from maze import Maze
+from mazegen import Maze
 from display import display
 
 
