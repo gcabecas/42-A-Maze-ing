@@ -65,7 +65,7 @@ SEED=42
 ### Choices
 
 - **Perfect maze**: DFS/backtracking (stack) starting from the entry.
-- **Imperfect maze**: random wall openings after generation.
+- **Imperfect maze**: random wall openings after generationating perfect or imperfect .
 - **“42” pattern**: a blocked area is attempted in the center (or elsewhere if
 	needed) as long as a valid path between entry and exit exists.
 
@@ -78,11 +78,9 @@ same core code.
 
 ## Reusable parts
 
-- **`mazegen` package**: the `Maze` class encapsulates generation, solving
-	(shortest path), and file export. It can be reused in other projects (CLI,
-	web, games, etc.).
-- **`config_parser.py`**: generic `KEY=VALUE` configuration parser with
-	Pydantic validation.
+- **`mazegen package`**: the `Maze` class encapsulates generation, solving
+	(shortest path), and file export.
+- **`generator`**: take width, heigth, entry, exit, outputfile, perfect and optionnaly a seed and generate a maze
 
 ## Features
 
@@ -101,13 +99,13 @@ same core code.
 ### Planning & evolution
 
 - **Planned**: 3 days learning tech, 3 days coding, 1 day cleanup.
-- **Actual**: schedule mostly respected.
+- **Actual**: schedule mostly respected, with +- 2 days.
 
 ### Retrospective
 
 - **What worked well**: teamwork.
 
-- **To improve**: package manager.
+- **To improve**: github management.
 
 ### Tools used
 
