@@ -7,27 +7,23 @@ from mazegen import Maze
 class ImgData:
     """Represent image buffer metadata used for rendering.
 
-    This class stores the MLX image pointer and all information
-    required to manipulate raw pixel data.
+        This class stores the MLX image pointer and all informations
+        required to manipulate raw pixel data.
 
-    Attributes:
-        img (Any): Pointer to the MLX image object.
-        width (int): Image width in pixels.
-        height (int): Image height in pixels.
-        data (bytearray): Raw image buffer.
-        sl (int): Size of one image line in bytes.
-        bpp (int): Bits per pixel.
-        iformat (int): Pixel format identifier.
-    """    """Container for image-related rendering data.
-
-    This class stores the raw image pointer, its dimensions, and
-    metadata required for pixel manipulation.
-    """
+        Attributes:
+            img (Any): Pointer to the MLX image object.
+            width (int): Image width in pixels.
+            height (int): Image height in pixels.
+            data (bytearray): Raw image buffer.
+            sl (int): Size of one image line in bytes.
+            bpp (int): Bits per pixel.
+            iformat (int): Pixel format identifier.
+        """
     def __init__(self) -> None:
         """Initialize an empty ImgData instance.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.img: Any = None
         self.width: int = 0
@@ -41,23 +37,23 @@ class ImgData:
 class RenderData:
     """Store rendering configuration parameters.
 
-    This class centralizes all visual settings used during maze
-    rendering.
+        This class centralizes all visual settings used during maze
+        rendering.
 
-    Attributes:
-        color (int): Current wall color.
-        ppc (int): Pixels per cell.
-        show_path (bool): Whether the solution path is displayed.
-        entry_color (int): Color for entry cell.
-        exit_color (int): Color for exit cell.
-        path_color (int): Color for solution path.
-        menu_color (int): Color for menu text.
+        Attributes:
+            color (int): Current wall color.
+            ppc (int): Pixels per cell.
+            show_path (bool): Whether the solution path is displayed.
+            entry_color (int): Color for entry cell.
+            exit_color (int): Color for exit cell.
+            path_color (int): Color for solution path.
+            menu_color (int): Color for menu text.
     """
     def __init__(self) -> None:
         """Initialize default rendering values.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.color = 0x55FFFF00
         self.ppc = 0
@@ -70,8 +66,8 @@ class RenderData:
     def change_color(self) -> None:
         """Change the current wall color cyclically.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         colors = [0x5500FFFF, 0x554169E1, 0x55FFFF00]
         i = colors.index(self.color)
@@ -81,9 +77,9 @@ class RenderData:
 class Renderer:
     """Render a maze into an MLX image buffer.
 
-    This class is responsible for drawing the maze grid, entry and exit
-    cells, solution path, and menu overlay into a graphical window
-    using an MLX backend.
+        This class is responsible for drawing the maze grid, entry and exit
+        cells, solution path, and menu overlay into a graphical window
+        using an MLX.
     """
     def __init__(
             self,
@@ -95,16 +91,16 @@ class Renderer:
             rend_data: RenderData) -> None:
         """Initialize the renderer with required graphical resources.
 
-        Args:
-            mlx (Mlx): MLX wrapper instance.
-            mlx_ptr (Any): Pointer returned by mlx_init.
-            window (Any): Window pointer created by MLX.
-            img (ImgData): Image data container.
-            maze (Maze): Maze instance to render.
-            rend_data (RenderData): Rendering configuration data.
+            Args:
+                mlx (Mlx): MLX wrapper instance.
+                mlx_ptr (Any): Pointer returned by mlx_init.
+                window (Any): Window pointer created by MLX.
+                img (ImgData): Image data container.
+                maze (Maze): Maze instance to render.
+                rend_data (RenderData): Rendering configuration data.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.mlx: Mlx = mlx
         self.mlx_ptr = mlx_ptr
@@ -117,10 +113,10 @@ class Renderer:
     def setup_ppc(self) -> None:
         """Compute pixels per cell based on image and maze size.
 
-        The value is stored in the rendering configuration.
+            The value is stored in the rendering configuration.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         img_size = min(self.img.width, self.img.height)
         maze_size = max(self.maze.width, self.maze.height)
@@ -129,24 +125,24 @@ class Renderer:
     def put_pixel(self, offset: int, color: int) -> None:
         """Write a single pixel color into the image buffer.
 
-        Args:
-            offset (int): Byte offset in the image buffer.
-            color (int): 32-bit integer color value.
+            Args:
+                offset (int): Byte offset in the image buffer.
+                color (int): 32-bit integer color value.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.img.data[offset: offset + 4] = color.to_bytes(4, 'little')
 
     def find_offset(self, x: int, y: int) -> int:
         """Compute the memory offset for a maze cell.
 
-        Args:
-            x (int): Cell x-coordinate.
-            y (int): Cell y-coordinate.
+            Args:
+                x (int): Cell x-coordinate.
+                y (int): Cell y-coordinate.
 
-        Returns:
-            int: Corresponding byte offset in the image buffer.
+            Returns:
+                int: Corresponding byte offset in the image buffer.
         """
         opp = self.img.bpp // 8
         pxl_x = x * self.rend_data.ppc
@@ -157,10 +153,10 @@ class Renderer:
     def clear_img(self) -> None:
         """Clear the entire image buffer.
 
-        All pixels are reset to transparent black.
+            All pixels are reset.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         for i in range(0, len(self.img.data), 4):
             self.img.data[i: i + 4] = (0x00000000).to_bytes(4, 'little')
@@ -168,12 +164,12 @@ class Renderer:
     def draw_block(self, offset: int, color: int) -> None:
         """Draw a filled square representing a maze cell.
 
-        Args:
-            offset (int): Starting byte offset of the cell.
-            color (int): 32-bit integer color value.
+            Args:
+                offset (int): Starting byte offset of the cell.
+                color (int): 32-bit integer color value.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         opp = self.img.bpp // 8
         ppc = self.rend_data.ppc
@@ -186,15 +182,15 @@ class Renderer:
     def draw_cell(self, offset: int, value: int) -> None:
         """Draw maze cell walls according to a bitmask value.
 
-        Each bit in the value represents the presence of a wall in
-        one of the four cardinal directions.
+            Each bit in the value represents the presence of a wall in
+            one of the four cardinal directions.
 
-        Args:
-            offset (int): Starting byte offset of the cell.
-            value (int): Bitmask representing cell walls.
+            Args:
+                offset (int): Starting byte offset of the cell.
+                value (int): Bitmask representing cell walls.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         ppc = self.rend_data.ppc
         color = self.rend_data.color
@@ -220,8 +216,8 @@ class Renderer:
     def draw_maze(self) -> None:
         """Render the complete maze grid.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         for i, value in enumerate(self.maze.grid):
             x = i % self.maze.width
@@ -236,8 +232,8 @@ class Renderer:
     def draw_entry_exit(self) -> None:
         """Highlight the maze entry and exit cells.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         entry_x, entry_y = self.maze.entry
         entry_off = self.find_offset(entry_x, entry_y)
@@ -250,8 +246,8 @@ class Renderer:
     def draw_path(self) -> None:
         """Draw the solution path over the maze.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         current = self.maze.entry
         for direction in self.maze.solver[: -1]:
@@ -264,12 +260,12 @@ class Renderer:
     def next_step(direction: str, current: tuple[int, int]) -> tuple[int, int]:
         """Compute the next cell position from a direction.
 
-        Args:
-            direction (str): Direction ("N", "S", "E", or "W").
-            current (tuple[int, int]): Current (x, y) coordinates.
+            Args:
+                direction (str): Direction ("N", "S", "E", or "W").
+                current (tuple[int, int]): Current (x, y) coordinates.
 
-        Returns:
-            tuple[int, int]: Updated (x, y) coordinates.
+            Returns:
+                tuple[int, int]: Updated (x, y) coordinates.
         """
         x, y = current
         moves = {"E": (x + 1, y),
@@ -281,8 +277,8 @@ class Renderer:
     def draw_menu(self) -> None:
         """Render the control menu text in the window.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.mlx.mlx_string_put(
             self.mlx_ptr,
@@ -295,11 +291,11 @@ class Renderer:
     def draw_all(self) -> None:
         """Render the complete scene.
 
-        This includes clearing the image, drawing entry/exit,
-        optionally drawing the path, and rendering the maze grid.
+            This includes clearing the image, drawing entry/exit,
+            optionally drawing the path, and rendering the maze grid.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.clear_img()
         self.draw_entry_exit()
@@ -311,11 +307,11 @@ class Renderer:
     def push(self, window_width: int) -> None:
         """Display the rendered image in the window.
 
-        Args:
-            window_width (int): Width of the application window.
+            Args:
+                window_width (int): Width of the application window.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         pos_x = (window_width - self.rend_data.ppc * self.maze.width) // 2
         self.mlx.mlx_put_image_to_window(
@@ -330,19 +326,19 @@ class Renderer:
 class App:
     """Main graphical application for displaying and interacting with a maze.
 
-    This class initializes the MLX environment, creates the rendering
-    context, and manages user interactions such as regenerating the
-    maze, changing colors, and toggling the solution path display.
+        This class initializes the MLX environment, creates the rendering
+        context, and manages user interactions such as regenerating the
+        maze, changing colors, and toggling the solution path display.
     """
 
     def __init__(self, maze: Maze) -> None:
         """Initialize the application with a maze instance.
 
-        Args:
-            maze (Maze): Maze instance to display.
+            Args:
+                maze (Maze): Maze instance to display.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.maze = maze
         self.rend_data = RenderData()
@@ -362,11 +358,11 @@ class App:
     def start(self) -> None:
         """Start the graphical event loop.
 
-        This method registers keyboard and window hooks and launches
-        the MLX main loop.
+            This method registers keyboard and window hooks and launches
+            the MLX main loop.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.draw()
         self.mlx.mlx_key_hook(self.window, self.gere_keys, self)
@@ -376,11 +372,11 @@ class App:
     def setup_image(self) -> None:
         """Create and configure the image buffer.
 
-        The image size is determined based on maze dimensions. Larger
-        mazes result in a dynamically scaled image size.
+            The image size is determined based on maze dimensions. Larger
+            mazes result in a dynamically scaled image size.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         img_size = 1000
         if self.maze.width > 300 or self.maze.height > 300:
@@ -406,8 +402,8 @@ class App:
     def setup_window(self) -> None:
         """Create and configure the application window.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.win_w = self.img.width + 200
         self.win_h = self.img.height + 200
@@ -421,12 +417,12 @@ class App:
     def gere_keys(self, keycode: int, _: Any) -> None:
         """Handle keyboard input events.
 
-        Args:
-            keycode (int): Key code representing the pressed key.
-            _ (Any): Unused callback parameter.
+            Args:
+                keycode (int): Key code representing the pressed key.
+                _ (Any): Unused callback parameter.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         actions = {
             49: self.regenerate,
@@ -441,8 +437,8 @@ class App:
     def regenerate(self) -> None:
         """Regenerate the maze and refresh the display.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.maze = regen_maze(self.maze)
         self.renderer.maze = self.maze
@@ -452,8 +448,8 @@ class App:
     def change_color(self) -> None:
         """Change the wall color and refresh the display.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.rend_data.change_color()
         self.draw()
@@ -461,17 +457,17 @@ class App:
     def toogle_path(self) -> None:
         """Toggle the visibility of the solution path.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.rend_data.show_path = not self.rend_data.show_path
         self.draw()
 
     def draw(self) -> None:
-        """Redraw the complete window content.
+        """Draw the complete window content.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.mlx.mlx_clear_window(self.mlx_ptr, self.window)
         self.renderer.draw_all()
@@ -480,11 +476,11 @@ class App:
     def close(self, _: Optional[Any] = None) -> None:
         """Release graphical resources and close the application.
 
-        Args:
-            _ (Optional[Any]): Optional callback parameter.
+            Args:
+                _ (Optional[Any]): Optional callback parameter.
 
-        Returns:
-            None
+            Returns:
+                None
         """
         self.renderer.clear_img()
         self.mlx.mlx_destroy_image(self.mlx_ptr, self.img.img)
@@ -495,14 +491,14 @@ class App:
 def regen_maze(maze: Maze) -> Maze:
     """Generate a new maze using the same configuration.
 
-    Args:
-        maze (Maze): Existing maze instance.
+        Args:
+            maze (Maze): Existing maze instance.
 
-    Returns:
-        Maze: Newly generated maze instance.
+        Returns:
+            Maze: Newly generated maze instance.
 
-    Raises:
-        SystemExit: If maze generation fails.
+        Raises:
+            SystemExit: If maze generation fails.
     """
     try:
         new_maze = Maze(
@@ -524,11 +520,11 @@ def regen_maze(maze: Maze) -> Maze:
 def display(maze: Maze) -> None:
     """Launch the graphical application to display a maze.
 
-    Args:
-        maze (Maze): Maze instance to display.
+        Args:
+            maze (Maze): Maze instance to display.
 
-    Returns:
-        None
+        Returns:
+            None
     """
     app = App(maze)
     app.start()

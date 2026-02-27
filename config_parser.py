@@ -5,19 +5,19 @@ from pydantic import BaseModel, Field, model_validator
 class MazeConfig(BaseModel):
     """Configuration model for maze generation.
 
-    This model validates and stores all parameters required to generate
-    a maze. It ensures dimensions are positive integers, coordinates are
-    valid tuples, and optional parameters such as the random seed are
-    properly typed.
+        This model validates and stores all parameters required to generate
+        a maze. It ensures dimensions are positive integers, coordinates are
+        valid tuples, and optional parameters such as the random seed are
+        properly typed.
 
-    Attributes:
-        WIDTH (int): Width of the maze. Must be greater than 0.
-        HEIGHT (int): Height of the maze. Must be greater than 0.
-        ENTRY (tuple[int, int]): Entry coordinates as (x, y).
-        EXIT (tuple[int, int]): Exit coordinates as (x, y).
-        OUTPUT_FILE (str): Path to the output file.
-        PERFECT (bool): Whether the maze is perfect (no loops).
-        SEED (Optional[int]): Optional random seed.
+        Attributes:
+            WIDTH (int): Width of the maze. Must be greater than 0.
+            HEIGHT (int): Height of the maze. Must be greater than 0.
+            ENTRY (tuple[int, int]): Entry coordinates as (x, y).
+            EXIT (tuple[int, int]): Exit coordinates as (x, y).
+            OUTPUT_FILE (str): Path to the output file.
+            PERFECT (bool): Whether the maze is perfect.
+            SEED (Optional[int]): Optional random seed.
     """
     WIDTH: int = Field(gt=0)
     HEIGHT: int = Field(gt=0)
@@ -32,28 +32,28 @@ class MazeConfig(BaseModel):
     def convert_strings(cls, data: Any) -> Any:
         """Convert raw configuration values before validation.
 
-        This method runs before Pydantic validation and converts
-        string-based inputs into the expected Python types. It is useful
-        when loading configuration values from environment variables or
-        configuration files.
+            This method runs before Pydantic validation and converts
+            string-based inputs into the expected Python types. It is useful
+            when loading configuration values from environment variables or
+            configuration files.
 
-        Supported conversions:
-            - WIDTH and HEIGHT to int
-            - SEED to int if provided
-            - ENTRY and EXIT from "x,y" to tuple[int, int]
-            - PERFECT from "true"/"false" to bool
+            Supported conversions:
+                - WIDTH and HEIGHT to int
+                - SEED to int if provided
+                - ENTRY and EXIT from "x,y" to tuple[int, int]
+                - PERFECT from "true"/"false" to bool
 
-        Args:
-            cls (type[MazeConfig]): The model class.
-            data (Any): Raw input data, usually a dictionary.
+            Args:
+                cls (type[MazeConfig]): The model class.
+                data (Any): Raw input data, usually a dictionary.
 
-        Returns:
-            Any: The transformed data dictionary or the original value
-            if it is not a dictionary.
+            Returns:
+                Any: The transformed data dictionary or the original value
+                if it is not a dictionary.
 
-        Raises:
-            ValueError: If a field cannot be converted to the expected
-            type or does not match the required format.
+            Raises:
+                ValueError: If a field cannot be converted to the expected
+                type or does not match the required format.
         """
         if not isinstance(data, dict):
             return data
@@ -109,21 +109,21 @@ class MazeConfig(BaseModel):
 def read_config(filename: str) -> dict[str, str]:
     """Read a configuration file into a dictionary.
 
-    The configuration file must contain one key-value pair per line,
-    separated by "=". Empty lines and lines starting with "#" are
-    ignored.
+        The configuration file must contain one key-value pair per line,
+        separated by "=". Empty lines and lines starting with "#" are
+        ignored.
 
-    Args:
-        filename (str): Path to the configuration file.
+        Args:
+            filename (str): Path to the configuration file.
 
-    Returns:
-        dict[str, str]: A dictionary mapping configuration keys to
-        their corresponding string values.
+        Returns:
+            dict[str, str]: A dictionary mapping configuration keys to
+            their corresponding string values.
 
-    Raises:
-        ValueError: If a non-empty, non-comment line does not contain
-        the "=" separator.
-        OSError: If the file cannot be opened or read.
+        Raises:
+            ValueError: If a non-empty, non-comment line does not contain
+            the "=" separator.
+            OSError: If the file cannot be opened or read.
     """
     cfg: dict[str, str] = {}
     with open(filename, "r") as f:
@@ -141,19 +141,19 @@ def read_config(filename: str) -> dict[str, str]:
 def verify_config(cfg: dict[str, str]) -> MazeConfig:
     """Validate a configuration dictionary using MazeConfig.
 
-    This function validates and converts the raw configuration
-    dictionary into a strongly typed ``MazeConfig`` instance using
-    Pydantic model validation.
+        This function validates and converts the raw configuration
+        dictionary into a strongly typed ``MazeConfig`` instance using
+        Pydantic model validation.
 
-    Args:
-        cfg (dict[str, str]): Raw configuration dictionary.
+        Args:
+            cfg (dict[str, str]): Raw configuration dictionary.
 
-    Returns:
-        MazeConfig: A validated and fully typed configuration object.
+        Returns:
+            MazeConfig: A validated and fully typed configuration object.
 
-    Raises:
-        ValidationError: If the configuration does not satisfy
-        MazeConfig constraints.
+        Raises:
+            ValidationError: If the configuration does not satisfy
+            MazeConfig constraints.
     """
     maze_config: MazeConfig = MazeConfig.model_validate(cfg)
     return maze_config
