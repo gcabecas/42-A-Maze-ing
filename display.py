@@ -250,7 +250,7 @@ class App:
         self.renderer.draw_all()
         self.renderer.push(self.win_w)
 
-    def close(self, _: Optional[Any]) -> None:
+    def close(self, _: Optional[Any] = None) -> None:
         self.renderer.clear_img()
         self.mlx.mlx_destroy_image(self.mlx_ptr, self.img.img)
         self.mlx.mlx_destroy_window(self.mlx_ptr, self.window)
